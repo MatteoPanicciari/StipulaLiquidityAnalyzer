@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional
 
-class LiquidityConstants:
+class LiqConst:
     upper_operator : str = 'u'
     lower_operator : str = 'n'
     operators = [upper_operator, lower_operator]
@@ -10,15 +10,15 @@ class LiquidityConstants:
     constants = [empty, full]
     xi : str = 'ξ'
 
-class LiquidityExpression:
-    def __init__(self, value: str, left:LiquidityExpression=None, right:LiquidityExpression=None):
+class LiqExpr:
+    def __init__(self, value: str, left:LiqExpr=None, right:LiqExpr=None):
         self.value: str = value
-        self.left: Optional[LiquidityExpression] = left
-        self.right: Optional[LiquidityExpression] = right
+        self.left: Optional[LiqExpr] = left
+        self.right: Optional[LiqExpr] = right
 
-    def set_operation(self, operation: str, right: LiquidityExpression):
-        if operation in LiquidityConstants.operators:
-            old_node = LiquidityExpression(self.value, self.left, self.right)
+    def add_operation(self, operation: str, right: LiqExpr):
+        if operation in LiqConst.operators:
+            old_node = LiqExpr(self.value, self.left, self.right)
             self.left = old_node
             self.right = right
             self.value = operation
@@ -50,17 +50,17 @@ class FunctionVisitorEntry(VisitorEntry):
     def __init__(self, start_state, handler, code_id, end_state, code_reference, xi, ones):
         super().__init__(start_state, handler, code_id, end_state, code_reference)
 
-        self.function_type_input: dict[str, LiquidityExpression] = {}
-        self.function_type_output: dict[str, list[LiquidityExpression | None]] = {}
+        self.function_type_input: dict[str, LiqExpr] = {}
+        self.function_type_output: dict[str, list[LiqExpr | None]] = {}
 
         for h in xi:
-            self.function_type_input[h] = LiquidityExpression(f'{LiquidityConstants.xi}{self.xi_count}')
-            self.function_type_output[h] = [LiquidityExpression(f'{LiquidityConstants.xi}{self.xi_count}')]
+            self.function_type_input[h] = LiqExpr(f'{LiqConst.xi}{self.xi_count}')
+            self.function_type_output[h] = [LiqExpr(f'{LiqConst.xi}{self.xi_count}')]
             self.xi_count += 1
 
         for p in ones:
-            self.function_type_input[p] = LiquidityExpression(LiquidityConstants.full)
-            self.function_type_output[p] = [LiquidityExpression(LiquidityConstants.full)]
+            self.function_type_input[p] = LiqExpr(LiqConst.full)
+            self.function_type_output[p] = [LiqExpr(LiqConst.full)]
 
     def add_function_level(self):
         for el in self.function_type_output:
@@ -70,10 +70,10 @@ class FunctionVisitorEntry(VisitorEntry):
         for el in self.function_type_output:
             self.function_type_output[el].pop()
 
-    def set_output(self, field: str, value: LiquidityExpression):
+    def set_field_value(self, field: str, value: LiqExpr):
         self.function_type_output[field][-1] = value
 
-    def get_output(self, field) -> LiquidityExpression:
+    def get_current_field_value(self, field) -> LiqExpr:
         count = 1
         res = None
         while not res and count <= len(self.function_type_output[field]):
@@ -81,10 +81,10 @@ class FunctionVisitorEntry(VisitorEntry):
             count+=1
         return res
 
-    def get_function_type(self) -> dict[str, dict[str,LiquidityExpression]]:
+    def get_function_type(self) -> dict[str, dict[str,LiqExpr]]:
         function_type_output_result = {}
         for el in self.function_type_output:
-            function_type_output_result[el] = self.get_output(el)
+            function_type_output_result[el] = self.get_current_field_value(el)
         return {'in': self.function_type_input, 'out': function_type_output_result}
 
     def __str__(self):

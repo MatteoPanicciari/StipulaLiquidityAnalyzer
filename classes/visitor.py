@@ -1,7 +1,7 @@
 from generated.StipulaVisitor import StipulaVisitor
 from generated.StipulaParser import StipulaParser
 
-from classes.data.visitorentry import FunctionVisitorEntry, CodeReference, LiquidityExpression, LiquidityConstants
+from classes.data.visitorentry import FunctionVisitorEntry, CodeReference, LiqExpr, LiqConst
 from classes.data.visitoroutput import VisitorOutput
 
 class Visitor(StipulaVisitor):
@@ -59,7 +59,7 @@ class Visitor(StipulaVisitor):
             else:
                 print("ERROR visitFunctionDecl")
 
-    def visitIfThenElse(self, ctx: StipulaParser.IfThenElseContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiquidityExpression]:
+    def visitIfThenElse(self, ctx: StipulaParser.IfThenElseContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiqExpr]:
         if ctx.expression():
             if self.visitExpression(ctx.expression()) != 'BOOL':
                 # TODO capire se puo assumere anche altri valori
@@ -77,13 +77,13 @@ class Visitor(StipulaVisitor):
                     return {}
 
                 for el in function_visitor_entry.function_type_output:
-                    function_visitor_entry.set_output(el, LiquidityExpression(LiquidityConstants.upper_operator, then_environment[el], else_environment[el]))
+                    function_visitor_entry.set_field_value(el, LiqExpr(LiqConst.upper_operator, then_environment[el], else_environment[el]))
                 return function_visitor_entry.get_function_type()['out']
 
         print("ERROR visitIfThenElse")
         return {}
 
-    def visitFunctionBody(self, ctx: StipulaParser.FunctionBodyContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiquidityExpression]:
+    def visitFunctionBody(self, ctx: StipulaParser.FunctionBodyContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiqExpr]:
         function_visitor_entry.add_function_level()
         for func_statement_ctx in ctx.statement():
             if func_statement_ctx.ifThenElse():
@@ -109,9 +109,9 @@ class Visitor(StipulaVisitor):
                     left_id = ctx.expression().getText()
                     if destination_id not in self.visitor_output.parties:
                         # [L-EXPAUND]
-                        destination_value = function_visitor_entry.get_output(destination_id)
-                        left_value = function_visitor_entry.get_output(left_id)
-                        destination_value.set_operation(LiquidityConstants.upper_operator, left_value)
+                        destination_value = function_visitor_entry.get_current_field_value(destination_id)
+                        left_value = function_visitor_entry.get_current_field_value(left_id)
+                        destination_value.add_operation(LiqConst.upper_operator, left_value)
                 pass
             else:
                 # left -o destination
@@ -122,11 +122,11 @@ class Visitor(StipulaVisitor):
 
                     if destination_id not in self.visitor_output.parties:
                         # [L-AUPDATE]
-                        destination_value = function_visitor_entry.get_output(destination_id)
-                        left_value = function_visitor_entry.get_output(left_id)
-                        destination_value.set_operation(LiquidityConstants.upper_operator, left_value)
+                        destination_value = function_visitor_entry.get_current_field_value(destination_id)
+                        left_value = function_visitor_entry.get_current_field_value(left_id)
+                        destination_value.add_operation(LiqConst.upper_operator, left_value)
                     # [L-AUPDATE] [L-ASEND]
-                    function_visitor_entry.set_output(left_id, LiquidityExpression(LiquidityConstants.empty))
+                    function_visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.empty))
                 else:
                     # left is a value
                     # TODO ?
