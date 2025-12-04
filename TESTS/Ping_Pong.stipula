@@ -1,0 +1,18 @@
+stipula Ping_Pong {
+  assets hA,hM
+  fields x
+
+  agreement(Amy,Mary){
+    Mary : x
+  } => @Q0
+
+  @Q0 Mary: ping()[u]{
+    hM -o Mary
+    u -o hA
+  } => @Q1
+
+  @Q1 Amy: pong()[v]{
+    hA -o Amy
+    v -o hM
+   } => @Q0
+}

@@ -1,0 +1,20 @@
+stipula Fill_Move {
+  assets hA, hB
+  fields x
+
+  agreement(Alice,Bob){
+    Alice: x
+  } => @Q0
+
+  @Q0 Alice: fill()[k]{
+    k -o hA
+  } => @Q1
+
+  @Q1 Bob: move()[]{
+    hA -o hB
+  } => @Q0
+
+  @Q0 Bob: end()[]{
+    hB -o Bob
+  } => @Q2
+}

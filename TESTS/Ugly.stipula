@@ -1,0 +1,19 @@
+stipula Ugly {
+    assets w1, w2
+    fields x
+
+    agreement(Mark, Sam) {
+        Mark: x
+    } => @Q0
+
+    @Q0 Mark: get()[u] {
+        u -o w2
+    } => @Q1
+
+    @Q0 Sam: shift()[] {
+        w1 -o Sam
+        w2 -o w1
+    } => @Q1
+
+    @Q1 Sam: end()[] {} => @Q2
+}
