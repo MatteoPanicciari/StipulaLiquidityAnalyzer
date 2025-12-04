@@ -1,7 +1,6 @@
 import functools
 
 from classes.data.visitorentry import FunctionVisitorEntry
-from classes.data.valuedependency import ValueDependency
 
 NOW = 'now'
 
@@ -66,31 +65,6 @@ class VisitorOutput:
             }), visitor_entry_set):
                 return True
         return False
-
-    @staticmethod
-    def reduce_reachability_constraint(previous_value_dependency, value_dependency):
-        min_value = min(previous_value_dependency.value, value_dependency.value)
-        previous_value = previous_value_dependency.value - min_value
-        value = value_dependency.value - min_value
-        previous_field_id_list = list(previous_value_dependency.dependency_tuple)
-        field_id_list = list(value_dependency.dependency_tuple)
-        index = 0
-        while index < len(previous_field_id_list):
-            if previous_field_id_list[index] in field_id_list:
-                field_id_list.remove(previous_field_id_list[index])
-                previous_field_id_list.pop(index)
-                continue
-            index += 1
-        return (
-            ValueDependency(previous_value, tuple(previous_field_id_list)),
-            ValueDependency(value, tuple(field_id_list)),
-        )
-
-    @staticmethod
-    def is_solvable(previous_value_dependency, value_dependency):
-        if not value_dependency.dependency_tuple and previous_value_dependency.value > value_dependency.value:
-            return False
-        return True
 
     def compute_r(self):
         # Base case
