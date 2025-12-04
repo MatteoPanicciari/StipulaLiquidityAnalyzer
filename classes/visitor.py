@@ -1,7 +1,7 @@
 from generated.StipulaVisitor import StipulaVisitor
 from generated.StipulaParser import StipulaParser
 
-from classes.data.visitorentry import FunctionVisitorEntry, CodeReference, LiquidityExpression
+from classes.data.visitorentry import FunctionVisitorEntry, CodeReference, LiquidityExpression, LiquidityConstants
 from classes.data.visitoroutput import VisitorOutput
 
 class Visitor(StipulaVisitor):
@@ -60,7 +60,6 @@ class Visitor(StipulaVisitor):
                 print("ERROR visitFunctionDecl")
 
     def visitIfThenElse(self, ctx: StipulaParser.IfThenElseContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiquidityExpression]:
-        print(f"ifThenElse {ctx.getText()}")
         if ctx.expression():
             if self.visitExpression(ctx.expression()) != 'BOOL':
                 # TODO capire se puo assumere anche altri valori
@@ -78,7 +77,7 @@ class Visitor(StipulaVisitor):
                     return {}
 
                 for el in function_visitor_entry.function_type_output:
-                    function_visitor_entry.set_output(el,3, f"({then_environment[el]} u {else_environment[el]})")
+                    function_visitor_entry.set_output(el, then_environment[el].set_operation(LiquidityConstants.upper_operator, else_environment[el]))
                 return function_visitor_entry.get_function_type()['out']
 
         print("ERROR visitIfThenElse")
@@ -110,7 +109,9 @@ class Visitor(StipulaVisitor):
                     left_id = ctx.expression().getText()
                     if destination_id not in self.visitor_output.parties:
                         # [L-EXPAUND]
-                        function_visitor_entry.set_output(destination_id, -1, left_id)
+                        destination_value = function_visitor_entry.get_output(destination_id)
+                        destination_value.set_operation(LiquidityConstants.upper_operator, left_id)
+                        function_visitor_entry.set_output(destination_id, destination_value)
                 pass
             else:
                 # left -o destination
@@ -121,9 +122,11 @@ class Visitor(StipulaVisitor):
 
                     if destination_id not in self.visitor_output.parties:
                         # [L-AUPDATE]
-                        function_visitor_entry.set_output(destination_id, -1, left_id)
+                        destination_value = function_visitor_entry.get_output(destination_id)
+                        destination_value.set_operation(LiquidityConstants.upper_operator, left_id)
+                        function_visitor_entry.set_output(destination_id, destination_value)
                     # [L-AUPDATE] [L-ASEND]
-                    function_visitor_entry.set_output(left_id, 0)
+                    function_visitor_entry.set_output(left_id, LiquidityExpression(LiquidityConstants.empty))
                 else:
                     # left is a value
                     # TODO ?
@@ -143,7 +146,7 @@ class Visitor(StipulaVisitor):
         return ''
 
     def visitExpression1(self, ctx: StipulaParser.Expression1Context) -> str:
-        print(f"expression1 {ctx.getText()}")
+        #print(f"expression1 {ctx.getText()}")
         if ctx.expression2():
             left_exp_type = self.visitExpression2(ctx.expression2())
             if ctx.NOT():
@@ -154,7 +157,7 @@ class Visitor(StipulaVisitor):
         return ''
 
     def visitExpression2(self, ctx: StipulaParser.Expression2Context) -> str:
-        print(f"expression2 {ctx.getText()}")
+        #print(f"expression2 {ctx.getText()}")
         if ctx.expression3():
             left_exp_type = self.visitExpression3(ctx.expression3())
             if ctx.expression2():
@@ -165,7 +168,7 @@ class Visitor(StipulaVisitor):
         return ''
 
     def visitExpression3(self, ctx: StipulaParser.Expression3Context) -> str:
-        print(f"expression3 {ctx.getText()}")
+        #print(f"expression3 {ctx.getText()}")
         if ctx.expression4():
             left_exp_type = self.visitExpression4(ctx.expression4())
             if ctx.expression3():
@@ -179,7 +182,7 @@ class Visitor(StipulaVisitor):
 
 
     def visitExpression4(self, ctx: StipulaParser.Expression4Context) -> str:
-        print(f"expression4 {ctx.getText()}")
+        #print(f"expression4 {ctx.getText()}")
         if ctx.expression5():
             left_exp_type = self.visitExpression5(ctx.expression5())
             if ctx.expression4():
@@ -192,14 +195,14 @@ class Visitor(StipulaVisitor):
         return ''
 
     def visitExpression5(self, ctx: StipulaParser.Expression5Context) -> str:
-        print(f"expression5 {ctx.getText()}")
+        #print(f"expression5 {ctx.getText()}")
         if ctx.expression6():
             # TODO controllo del tipo? se STRING, non posso metterci il MINUS
             return self.visitExpression6(ctx.expression6())
         return ''
 
     def visitExpression6(self, ctx: StipulaParser.Expression6Context) -> str:
-        print(f"expression6 {ctx.getText()}")
+        #print(f"expression6 {ctx.getText()}")
         if ctx.NOW():
             return 'NOW'
         elif ctx.BOOL():
