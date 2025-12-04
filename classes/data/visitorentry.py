@@ -1,26 +1,42 @@
+from typing import Optional
+
+class LiquidityConstants:
+    upper_operator : str = 'u'
+    lower_operator : str = 'n'
+    operators = [upper_operator, lower_operator]
+    empty : str = '0'
+    full : str = '1'
+    unset : str = 'UNSET'
+    constants = [empty, full, unset]
+    xi : str = 'ξ'
+
 class LiquidityExpression:
-    def __init__(self, v: str):
-        self.value : str = v
+    def __init__(self, value: str, left=None, right=None):
+        self.value: str = value
+        self.left: Optional[LiquidityExpression] = left
+        self.right: Optional[LiquidityExpression] = right
 
-    def set_liquidity_value(self, v: int, right: str = ''):
-        match v:
-            case 0:
-                self.value = '0'
-            case 1:
-                self.value = '1'
-            case 3:
-                self.value = f'{right}'
-            case -1:
-                self.value = f'({self.value} u {right})'
-            case -2:
-                self.value = f'({self.value} n {right})'
-            case -3:
-                self.value = f'UNSET'
+    def set_liquidity_value(self, v: str, r: str = ''):
+        if v in LiquidityConstants.constants:
+            self.value = v
+            self.left = None
+            self.right = None
+        elif v in LiquidityConstants.operators:
+            old_node = LiquidityExpression(self.value, self.left, self.right)
+            self.left = old_node
+            self.right = LiquidityExpression(r)
+            self.value = v
+        else:   # ξ
+            self.value = v
+            self.left = None
+            self.right = None
 
-    def __repr__(self):
-        return self.value
     def __str__(self):
+        if self.value in LiquidityConstants.operators:
+            return f'({self.left} {self.value} {self.right})'
         return self.value
+
+    __repr__ = __str__
 
 class CodeReference:
     def __init__(self, start_line, end_line):
