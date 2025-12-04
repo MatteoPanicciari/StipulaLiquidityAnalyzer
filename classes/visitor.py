@@ -104,14 +104,13 @@ class Visitor(StipulaVisitor):
             left_type = self.visitExpression(ctx.expression())
             if ctx.ID(1):
                 # left -o right,destination
-                right_id = ctx.ID(0).getText()
                 destination_id = ctx.ID(1).getText()
                 if left_type == 'ID':
                     # left is an asset
                     left_id = ctx.expression().getText()
-                    function_visitor_entry.set_output(destination_id, -1, left_id)
-                    # TODO cosa fare con right
-                    #   se left non è un valore ma un asset? lo svuoto?
+                    if destination_id not in self.visitor_output.parties:
+                        # [L-EXPAUND]
+                        function_visitor_entry.set_output(destination_id, -1, left_id)
                 pass
             else:
                 # left -o destination
