@@ -32,6 +32,11 @@ class LiqExpr:
 
     __repr__ = __str__
 
+    def __eq__(self, other):
+        if isinstance(other, LiqExpr):
+            return self.value == other.value and self.left == other.left and self.right == other.right
+        return False
+
 class CodeReference:
     def __init__(self, start_line, end_line):
         self.start_line = start_line
@@ -84,8 +89,47 @@ class FunctionVisitorEntry(VisitorEntry):
     def get_function_type(self) -> dict[str, dict[str,LiqExpr]]:
         function_type_output_result = {}
         for el in self.function_type_output:
-            function_type_output_result[el] = self.get_current_field_value(el)
+            function_type_output_result[el] = self.resolve_partial_evaluation(self.get_current_field_value(el))
         return {'in': self.function_type_input, 'out': function_type_output_result}
+
+    def resolve_partial_evaluation(self, e: LiqExpr) -> LiqExpr:
+        if e.value in LiqConst.constants or LiqConst.xi in e.value:
+            # if e=0 or e=1 or e=ξ
+            return LiqExpr(e.value)
+
+        e_left = self.resolve_partial_evaluation(e.left)
+        e_right = self.resolve_partial_evaluation(e.right)
+        if e.value == LiqConst.upper_operator:
+            # if   e = e' u e''   and   (e' = 1   or   e'' = 1)
+            if e_left == LiqExpr(LiqConst.full) or e_right == LiqExpr(LiqConst.full):
+                return LiqExpr(LiqConst.full)
+
+            # if   (e = e' u e''   or   e = e'' u e')   and   e'' = 0
+            if e_left == LiqExpr(LiqConst.empty):
+                return e_right
+            if e_right == LiqExpr(LiqConst.empty):
+                return e_left
+
+            # if   e = e' u e''   and no-one of the above cases applies
+            return LiqExpr(LiqConst.upper_operator, e_left, e_right)
+        elif e.value == LiqConst.lower_operator:
+            # if   e = e' n e''   and   (e' = 0   or   e'' = 0)
+            if e_left == LiqExpr(LiqConst.empty) or e_right == LiqExpr(LiqConst.empty):
+                return LiqExpr(LiqConst.empty)
+
+            # if   (e = e' n e''   or   e = e'' n e')   and   e'' = 1
+            if e_left == LiqExpr(LiqConst.full):
+                return e_right
+            if e_right == LiqExpr(LiqConst.full):
+                return e_left
+
+            # if   e = e' u e''   and no-one of the above cases applies
+            return LiqExpr(LiqConst.lower_operator, e_left, e_right)
+
+        print("ERROR resolve_partial_evaluation")
+        return e
+
+
 
     def __str__(self):
         return f"{self.start_state} {self.handler}:{self.code_id} {self.end_state};"
