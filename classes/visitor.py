@@ -77,7 +77,7 @@ class Visitor(StipulaVisitor):
                     return {}
 
                 for el in function_visitor_entry.function_type_output:
-                    function_visitor_entry.set_output(el, then_environment[el].set_operation(LiquidityConstants.upper_operator, else_environment[el]))
+                    function_visitor_entry.set_output(el, LiquidityExpression(LiquidityConstants.upper_operator, then_environment[el], else_environment[el]))
                 return function_visitor_entry.get_function_type()['out']
 
         print("ERROR visitIfThenElse")
@@ -110,8 +110,8 @@ class Visitor(StipulaVisitor):
                     if destination_id not in self.visitor_output.parties:
                         # [L-EXPAUND]
                         destination_value = function_visitor_entry.get_output(destination_id)
-                        destination_value.set_operation(LiquidityConstants.upper_operator, left_id)
-                        function_visitor_entry.set_output(destination_id, destination_value)
+                        left_value = function_visitor_entry.get_output(left_id)
+                        destination_value.set_operation(LiquidityConstants.upper_operator, left_value)
                 pass
             else:
                 # left -o destination
@@ -123,8 +123,8 @@ class Visitor(StipulaVisitor):
                     if destination_id not in self.visitor_output.parties:
                         # [L-AUPDATE]
                         destination_value = function_visitor_entry.get_output(destination_id)
-                        destination_value.set_operation(LiquidityConstants.upper_operator, left_id)
-                        function_visitor_entry.set_output(destination_id, destination_value)
+                        left_value = function_visitor_entry.get_output(left_id)
+                        destination_value.set_operation(LiquidityConstants.upper_operator, left_value)
                     # [L-AUPDATE] [L-ASEND]
                     function_visitor_entry.set_output(left_id, LiquidityExpression(LiquidityConstants.empty))
                 else:
