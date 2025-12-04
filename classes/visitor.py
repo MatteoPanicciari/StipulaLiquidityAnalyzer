@@ -44,7 +44,7 @@ class Visitor(StipulaVisitor):
         i.e. FunctionVisitorEntry call : (start_state=Q0, handler=Alice, code_id=fill, end_state=Q1, code_reference=(9, 11))
         """
         list_of_xi = [a for a in self.visitor_output.global_assets]
-        list_of_ones = [a.text for a in ctx.assetId+ctx.fieldId]
+        list_of_ones = [a.text for a in ctx.assetId]
         function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text, ctx.functionId.text, ctx.endStateId.text, CodeReference(ctx.start.line, ctx.stop.line), list_of_xi, list_of_ones)
         self.visitor_output.add_visitor_entry(function_visitor_entry)   # update C and Lc on visitor_output
 
