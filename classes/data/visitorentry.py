@@ -45,63 +45,43 @@ class VisitorEntry:
         self.end_state = end_state
         self.code_reference = code_reference
 
-    def __str__(self):
-        return str((
-            self.start_state,
-            self.handler,
-            self.code_id,
-            self.end_state,
-        ))
-
 class FunctionVisitorEntry(VisitorEntry):
     xi_count : int = 1
     def __init__(self, start_state, handler, code_id, end_state, code_reference, xi, ones):
         super().__init__(start_state, handler, code_id, end_state, code_reference)
 
         self.function_type_input: dict[str, LiquidityExpression] = {}
-        self.function_type_output: dict[str, list[LiquidityExpression]] = {}
-        self.assets: list[str] = []
-        self.params: list[str] = []
+        self.function_type_output: dict[str, list[LiquidityExpression | None]] = {}
 
         for h in xi:
-            self.function_type_input[h] = LiquidityExpression(f'ξ{self.xi_count}')
-            self.function_type_output[h] = [LiquidityExpression(f'ξ{self.xi_count}')]
+            self.function_type_input[h] = LiquidityExpression(f'{LiquidityConstants.xi}{self.xi_count}')
+            self.function_type_output[h] = [LiquidityExpression(f'{LiquidityConstants.xi}{self.xi_count}')]
             self.xi_count += 1
-            self.assets.append(h)
 
         for p in ones:
-            self.function_type_input[p] = LiquidityExpression('1')
-            self.function_type_output[p] = [LiquidityExpression('1')]
-            self.params.append(p)
+            self.function_type_input[p] = LiquidityExpression(LiquidityConstants.full)
+            self.function_type_output[p] = [LiquidityExpression(LiquidityConstants.full)]
 
     def add_function_level(self):
         for el in self.function_type_output:
-            self.function_type_output[el].append(LiquidityExpression('UNSET'))
+            self.function_type_output[el].append(None)
 
     def del_function_level(self):
         for el in self.function_type_output:
             self.function_type_output[el].pop()
 
-    def set_output(self, field, value:int, right:str=''):
-        if value < 0:
-            if right:
-                right_value = self.get_output(right)
-            else:
-                print('ERROR set_output')
-                return
-        else:
-            right_value = right
-        self.function_type_output[field][-1].set_liquidity_value(value, right_value)
+    def set_output(self, field: str, value: LiquidityExpression):
+        self.function_type_output[field][-1] = value
 
-    def get_output(self, field):
+    def get_output(self, field) -> LiquidityExpression:
         count = 1
-        res = 'UNSET'
-        while res == 'UNSET' and count <= len(self.function_type_output[field]):
-            res = self.function_type_output[field][-count].value
+        res = None
+        while not res and count <= len(self.function_type_output[field]):
+            res = self.function_type_output[field][-count]
             count+=1
         return res
 
-    def get_function_type(self):
+    def get_function_type(self) -> dict[str, dict[str,LiquidityExpression]]:
         function_type_output_result = {}
         for el in self.function_type_output:
             function_type_output_result[el] = self.get_output(el)
