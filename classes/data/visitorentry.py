@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 
 class LiquidityConstants:
@@ -6,35 +7,28 @@ class LiquidityConstants:
     operators = [upper_operator, lower_operator]
     empty : str = '0'
     full : str = '1'
-    unset : str = 'UNSET'
-    constants = [empty, full, unset]
+    constants = [empty, full]
     xi : str = 'ξ'
 
 class LiquidityExpression:
-    def __init__(self, value: str, left=None, right=None):
+    def __init__(self, value: str, left:LiquidityExpression=None, right:LiquidityExpression=None):
         self.value: str = value
         self.left: Optional[LiquidityExpression] = left
         self.right: Optional[LiquidityExpression] = right
 
-    def set_liquidity_value(self, v: str, r: str = ''):
-        if v in LiquidityConstants.constants:
-            self.value = v
-            self.left = None
-            self.right = None
-        elif v in LiquidityConstants.operators:
+    def set_operation(self, operation: str, right: LiquidityExpression):
+        if operation in LiquidityConstants.operators:
             old_node = LiquidityExpression(self.value, self.left, self.right)
             self.left = old_node
-            self.right = LiquidityExpression(r)
-            self.value = v
-        else:   # ξ
-            self.value = v
-            self.left = None
-            self.right = None
+            self.right = right
+            self.value = operation
+        else:
+            print("ERROR set_operation")
 
     def __str__(self):
-        if self.value in LiquidityConstants.operators:
-            return f'({self.left} {self.value} {self.right})'
-        return self.value
+        if self.left is None or self.right is None:
+            return self.value
+        return f'({self.left} {self.value} {self.right})'
 
     __repr__ = __str__
 
