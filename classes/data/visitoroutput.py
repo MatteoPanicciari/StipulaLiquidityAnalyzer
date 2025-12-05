@@ -1,20 +1,19 @@
 import functools
 
 from classes.data.visitorentry import FunctionVisitorEntry
+from collections import Counter
 
 NOW = 'now'
 
 class VisitorOutput:
-    k = 1
+    k = 1   # maximum number of times a function can appear in the same abstract computation
 
     def __init__(self):
         self.Q0 : str = ''  # initial state
         self.parties: list[str] = list()
         self.global_assets: list[str] = list()
         self.functions: set[FunctionVisitorEntry] = set() # set of all the clauses of the contract
-        # TODO: trasformarli in dei multiset per poter far sì che una funzione compaia
-        #  in una computazione al più un numero k di volte e non 1 come adesso
-        self.abs_computations: dict[FunctionVisitorEntry, tuple[FunctionVisitorEntry]] = dict()
+        self.abs_computations: dict[FunctionVisitorEntry, set[tuple[FunctionVisitorEntry]]] = dict()
         self.final_states: list[str] = list()
 
     def print_results(self):
@@ -91,7 +90,7 @@ class VisitorOutput:
                             #   checks if the current function appears less than k times in the tuple
                             #   if True, add the function to the tuple
                             new_previous_fn_tuple = previous_fn_tuple
-                            if current_fn not in new_previous_fn_tuple:
+                            if Counter(previous_fn_tuple)[current_fn] < self.k:
                                 new_previous_fn_tuple += (current_fn,)
                             tuples_to_add.add(new_previous_fn_tuple)
 
