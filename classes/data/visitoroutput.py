@@ -81,23 +81,22 @@ class VisitorOutput:
         is_change = True
         while is_change:
             is_change = False
-            for current_visitor_entry in self.functions:
-                visitor_entry_tuple_set_to_add = set()
-                if type(current_visitor_entry).__name__ ==  FunctionVisitorEntry.__name__:
-                    for previous_visitor_entry in self.functions:
-                        # check if the previous_entry end state match with current_entry start state
-                        if previous_visitor_entry.end_state == current_visitor_entry.start_state:
-                            # foreach tuple of previous_entry computations, checks if current_entry is already in the tuple
-                            for visitor_entry_tuple in self.abs_computations[previous_visitor_entry]:
-                                if current_visitor_entry not in visitor_entry_tuple:
-                                    new_tuple = visitor_entry_tuple + (current_visitor_entry,)
-                                else:
-                                    new_tuple = visitor_entry_tuple
+            for current_fn in self.functions:
+                tuples_to_add = set()
+                for previous_fn in self.functions:
+                    if previous_fn.end_state == current_fn.start_state:
+                        # check if previous_fn goes to current_function start state
+                        for previous_fn_tuple in self.abs_computations[previous_fn]:
+                            # foreach tuple in previous_fn.set:
+                            #   checks if the current function appears less than k times in the tuple
+                            #   if True, add the function to the tuple
+                            new_previous_fn_tuple = previous_fn_tuple
+                            if current_fn not in new_previous_fn_tuple:
+                                new_previous_fn_tuple += (current_fn,)
+                            tuples_to_add.add(new_previous_fn_tuple)
 
-                                visitor_entry_tuple_set_to_add.add(new_tuple)
-
-                is_change = is_change or bool(visitor_entry_tuple_set_to_add.difference(self.abs_computations[current_visitor_entry]))
-                self.abs_computations[current_visitor_entry].update(visitor_entry_tuple_set_to_add)
+                is_change = is_change or bool(tuples_to_add.difference(self.abs_computations[current_fn]))
+                self.abs_computations[current_fn].update(tuples_to_add)
 
     def compute_final_states(self):
         states = set()
