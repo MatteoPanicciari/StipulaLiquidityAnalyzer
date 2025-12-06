@@ -1,6 +1,7 @@
 import functools
 
-from classes.data.visitorentry import FunctionVisitorEntry, LiqExpr
+from classes.data.visitor_entry import FunctionVisitorEntry
+from classes.data.liquidity_expression import LiqExpr
 from collections import Counter
 
 NOW = 'now'
@@ -34,11 +35,6 @@ class VisitorOutput:
                 for abs_computation in self.abs_computations[fn]:
                     self.abs_computations_to_final_state.add(abs_computation)
                     print(f"\t\t{self.print_formatted_computation(abs_computation)}")
-
-        print(f"\tAbstract Computations to Final States Types:")
-        for abs_computation_fn in self.abs_computation:
-            self.abs_computations_liq_type[abs_computation] = abs_computation_fn
-            print(f"\t\t\t{self.print_formatted_computation(abs_computation)}")
 
     @staticmethod
     def print_formatted_computation(computation):

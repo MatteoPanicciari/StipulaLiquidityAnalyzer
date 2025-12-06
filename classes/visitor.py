@@ -1,8 +1,9 @@
 from generated.StipulaVisitor import StipulaVisitor
 from generated.StipulaParser import StipulaParser
 
-from classes.data.visitorentry import FunctionVisitorEntry, CodeReference, LiqExpr, LiqConst
-from classes.data.visitoroutput import VisitorOutput
+from classes.data.visitor_entry import FunctionVisitorEntry, CodeReference
+from classes.data.liquidity_expression import LiqExpr, LiqConst
+from classes.data.visitor_output import VisitorOutput
 
 class Visitor(StipulaVisitor):
     def __init__(self):
