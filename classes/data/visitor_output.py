@@ -1,10 +1,6 @@
-import functools
-
 from classes.data.visitor_entry import FunctionVisitorEntry
 from classes.data.liquidity_expression import LiqExpr
 from collections import Counter
-
-NOW = 'now'
 
 class VisitorOutput:
     k = 1   # maximum number of times a function can appear in the same abstract computation (k-canonical)
@@ -54,17 +50,6 @@ class VisitorOutput:
 
     def add_global_asset(self, asset):
         self.global_assets.append(asset.text)
-
-    def is_cyclic(self, visitor_entry, loop_visitor_entry_set, visitor_entry_set):
-        if visitor_entry in loop_visitor_entry_set:
-            return True
-        visitor_entry_set = visitor_entry_set or functools.reduce(lambda a, b: a.union(set(b)), functools.reduce(lambda a, b: a.union(b), self.abs_computations.values(), set()), set())
-        for previous_visitor_entry in (previous_visitor_entry for previous_visitor_entry in visitor_entry_set if previous_visitor_entry.end_state == visitor_entry.start_state):
-            if self.is_cyclic(previous_visitor_entry, loop_visitor_entry_set.union({
-                visitor_entry
-            }), visitor_entry_set):
-                return True
-        return False
 
     def compute_r(self):
         # Base case
