@@ -27,6 +27,10 @@ class Visitor(StipulaVisitor):
         self.visitor_output.compute_results(ctx.ID())
 
     def visitAssetsDecl(self, ctx:StipulaParser.AssetsDeclContext):
+        """
+        Visit assets declaration
+        i.e. : assets h1, h2
+        """
         for a in ctx.assetId:
             self.visitor_output.add_global_asset(a)
 

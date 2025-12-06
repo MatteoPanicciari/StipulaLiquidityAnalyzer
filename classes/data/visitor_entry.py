@@ -95,6 +95,5 @@ class FunctionVisitorEntry(VisitorEntry):
 
 
     def __str__(self):
-        return f"{self.start_state} {self.handler}:{self.code_id} {self.end_state};"
-    def __repr__(self):
-        return f"{self.start_state} {self.handler}.{self.code_id} {self.end_state}"
+        return f"{self.start_state} {self.handler}:{self.code_id} {self.end_state}"
+    __repr__ = __str__
