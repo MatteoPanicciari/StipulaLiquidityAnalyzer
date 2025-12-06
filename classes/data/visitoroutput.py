@@ -1,12 +1,12 @@
 import functools
 
-from classes.data.visitorentry import FunctionVisitorEntry
+from classes.data.visitorentry import FunctionVisitorEntry, LiqExpr
 from collections import Counter
 
 NOW = 'now'
 
 class VisitorOutput:
-    k = 1   # maximum number of times a function can appear in the same abstract computation
+    k = 1   # maximum number of times a function can appear in the same abstract computation (k-canonical)
 
     def __init__(self):
         self.Q0 : str = ''  # initial state
@@ -16,24 +16,29 @@ class VisitorOutput:
         self.abs_computations: dict[FunctionVisitorEntry, set[tuple[FunctionVisitorEntry]]] = dict()
         self.final_states: list[str] = list()
 
-    def print_results(self):
-        print("_________________________________________\nRESULTS")
+        self.abs_computations_to_final_state : set[tuple[FunctionVisitorEntry]] = set()
+        self.functions_liq_type : dict[FunctionVisitorEntry, dict[str, dict[str, LiqExpr]]] = dict()
+        self.abs_computations_liq_type : dict[tuple[FunctionVisitorEntry], tuple[str, dict[str, LiqExpr]]] = dict()
 
-        results=[]
-        for a in self.abs_computations:
-            if a.end_state in self.final_states:
-                for b in self.abs_computations[a]:
-                    results.append(self.print_formatted_computation(b))
-        print(f"\nabstract computations to final states:")
-        for a in results:
-            print(a)
+    def compute_results(self, name):
+        print(f"_________________________________________\n{name}")
 
-        lc = dict()
-        for a in self.functions:
-            lc[a] = a.get_function_type()
-        print(f"\nLc:")
-        for a in lc:
-            print(f"{a} : {lc[a]['in']} -> {lc[a]['out']}")
+        print(f"\tFunction Liquidity Types:")
+        for fn in self.functions:
+            self.functions_liq_type[fn] = fn.get_function_type()
+            print(f"\t\t{fn} : {self.functions_liq_type[fn]['in']} -> {self.functions_liq_type[fn]['out']}")
+
+        print(f"\tAbstract Computations to Final States:")
+        for fn in self.abs_computations:
+            if fn.end_state in self.final_states:
+                for abs_computation in self.abs_computations[fn]:
+                    self.abs_computations_to_final_state.add(abs_computation)
+                    print(f"\t\t{self.print_formatted_computation(abs_computation)}")
+
+        print(f"\tAbstract Computations to Final States Types:")
+        for abs_computation_fn in self.abs_computation:
+            self.abs_computations_liq_type[abs_computation] = abs_computation_fn
+            print(f"\t\t\t{self.print_formatted_computation(abs_computation)}")
 
     @staticmethod
     def print_formatted_computation(computation):

@@ -23,7 +23,7 @@ class Visitor(StipulaVisitor):
 
         self.visitor_output.compute_r()
         self.visitor_output.compute_final_states()
-        self.visitor_output.print_results()
+        self.visitor_output.compute_results(ctx.ID())
 
     def visitAssetsDecl(self, ctx:StipulaParser.AssetsDeclContext):
         for a in ctx.assetId:
