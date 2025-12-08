@@ -20,6 +20,8 @@ class FunctionVisitorEntry(VisitorEntry):
 
         self.function_type_input: dict[str, LiqExpr] = {}
         self.function_type_output: dict[str, list[LiqExpr | None]] = {}
+        self.global_assets = global_assets
+        self.local_assets = local_assets
 
         for h in global_assets:
             self.function_type_input[h] = LiqExpr(f'{LiqConst.xi}{self.xi_count}')
@@ -53,7 +55,19 @@ class FunctionVisitorEntry(VisitorEntry):
         function_type_output_result = {}
         for el in self.function_type_output:
             function_type_output_result[el] = self.resolve_partial_evaluation(self.get_current_field_value(el))
-        return {'in': self.function_type_input, 'out': function_type_output_result}
+        return {'start': self.function_type_input, 'end': function_type_output_result}
+
+    def copy_function_type(self, only_global: bool = False) -> dict[str, dict[str,LiqExpr]]:
+        function_type = self.get_function_type()
+        function_type_result = dict(start=dict(), end=dict())
+        for el in self.global_assets:
+            function_type_result['start'][el] = function_type['start'][el].copy()
+            function_type_result['end'][el] = function_type['end'][el].copy()
+        if not only_global:
+            for el in self.local_assets:
+                function_type_result['start'][el] = function_type['start'][el].copy()
+                function_type_result['end'][el] = function_type['end'][el].copy()
+        return function_type_result
 
     def resolve_partial_evaluation(self, e: LiqExpr) -> LiqExpr:
         if e.value in LiqConst.constants or LiqConst.xi in e.value:
