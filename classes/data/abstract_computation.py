@@ -31,14 +31,14 @@ class AbsComputation:
             self.function_liq_type_begin.append(function_env['start'])
             for h in self.function_liq_type_begin[-1]:
                 if h in function.global_assets and str(self.function_liq_type_begin[-1][h]) not in LiqConst.constants:
-                    h_value = self.function_liq_type_end[-1][h].copy()
+                    h_value = self.function_liq_type_end[-1][h].copy_liquidity()
                     self.function_liq_type_begin[-1][h].replace_value(str(self.function_liq_type_begin[-1][h]), h_value)
             #print(f"begin = {self.function_liq_type_begin[-1]}")
 
         self.function_liq_type_end.append(function_env['end'])
         for h in self.function_liq_type_end[-1]:
             if h in function.global_assets and str(self.function_liq_type_end[-1][h]) not in LiqConst.constants:
-                h_value = self.function_liq_type_begin[-1][h].copy()
+                h_value = self.function_liq_type_begin[-1][h].copy_liquidity()
                 self.function_liq_type_end[-1][h].replace_value(str(self.function_liq_type_end[-1][h]), h_value)
         #print(f"end = {self.function_liq_type_end[-1]}")
         #print(f"{function_env['start']} -> {function_env['end']}")

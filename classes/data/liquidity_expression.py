@@ -18,7 +18,7 @@ class LiqExpr:
 
     def add_operation(self, operation: str, right: LiqExpr):
         if operation in LiqConst.operators:
-            old_node = self.copy()
+            old_node = self.copy_liquidity()
             self.left = old_node
             self.right = right
             self.value = operation
@@ -30,7 +30,7 @@ class LiqExpr:
             self.left.replace_value(start_value, end_value)
             self.right.replace_value(start_value, end_value)
         elif self.value == start_value:
-            new_node = end_value.copy()
+            new_node = end_value.copy_liquidity()
             self.value = new_node.value
             self.left = new_node.left
             self.right = new_node.right
@@ -47,5 +47,5 @@ class LiqExpr:
             return self.value == other.value and self.left == other.left and self.right == other.right
         return False
 
-    def copy(self) -> LiqExpr:
+    def copy_liquidity(self) -> LiqExpr:
         return LiqExpr(self.value, self.left, self.right)

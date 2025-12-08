@@ -61,12 +61,12 @@ class FunctionVisitorEntry(VisitorEntry):
         function_type = self.get_function_type()
         function_type_result = dict(start=dict(), end=dict())
         for el in self.global_assets:
-            function_type_result['start'][el] = function_type['start'][el].copy()
-            function_type_result['end'][el] = function_type['end'][el].copy()
+            function_type_result['start'][el] = function_type['start'][el].copy_liquidity()
+            function_type_result['end'][el] = function_type['end'][el].copy_liquidity()
         if not only_global:
             for el in self.local_assets:
-                function_type_result['start'][el] = function_type['start'][el].copy()
-                function_type_result['end'][el] = function_type['end'][el].copy()
+                function_type_result['start'][el] = function_type['start'][el].copy_liquidity()
+                function_type_result['end'][el] = function_type['end'][el].copy_liquidity()
         return function_type_result
 
     def resolve_partial_evaluation(self, e: LiqExpr) -> LiqExpr:
