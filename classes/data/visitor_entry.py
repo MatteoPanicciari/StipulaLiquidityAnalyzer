@@ -26,7 +26,7 @@ class FunctionVisitorEntry(VisitorEntry):
             self.function_type_output[h] = [LiqExpr(f'{LiqConst.xi}{self.xi_count}')]
             self.xi_count += 1
 
-        for p in ones:
+        for p in local_assets:
             self.function_type_input[p] = LiqExpr(LiqConst.full)
             self.function_type_output[p] = [LiqExpr(LiqConst.full)]
 

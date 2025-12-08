@@ -25,6 +25,16 @@ class LiqExpr:
         else:
             print("ERROR set_operation")
 
+    def replace_value(self, start_value: str, end_value: LiqExpr):
+        if self.value in LiqConst.operators and self.left and self.right:
+            self.left.replace_value(start_value, end_value)
+            self.right.replace_value(start_value, end_value)
+        elif self.value == start_value:
+            new_node = end_value.copy()
+            self.value = new_node.value
+            self.left = new_node.left
+            self.right = new_node.right
+
     def __str__(self):
         if self.left is None or self.right is None:
             return self.value
