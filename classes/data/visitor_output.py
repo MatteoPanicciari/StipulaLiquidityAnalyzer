@@ -30,7 +30,7 @@ class VisitorOutput:
                 for abs_computation in self.abs_computations[fn]:
                     self.abs_computations_to_final_state.add(abs_computation)
                     print(f"\t\t{abs_computation}")
-                    print(f"\t\t\t{abs_computation.function_liq_type_begin[0]} -> {abs_computation.function_liq_type_end[-1]}")
+                    print(f"\t\t\t{abs_computation.liq_type_begin[0]} -> {abs_computation.liq_type_end[-1]}")
 
     def set_init_state_id(self, state_id):
         self.Q0 = state_id

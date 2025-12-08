@@ -54,7 +54,7 @@ class FunctionVisitorEntry(VisitorEntry):
     def get_function_type(self) -> dict[str, dict[str,LiqExpr]]:
         function_type_output_result = {}
         for el in self.function_type_output:
-            function_type_output_result[el] = self.resolve_partial_evaluation(self.get_current_field_value(el))
+            function_type_output_result[el] = LiqExpr.resolve_partial_eval(self.get_current_field_value(el))
         return {'start': self.function_type_input, 'end': function_type_output_result}
 
     def copy_function_type(self, only_global: bool = False) -> dict[str, dict[str,LiqExpr]]:
@@ -68,44 +68,6 @@ class FunctionVisitorEntry(VisitorEntry):
                 function_type_result['start'][el] = function_type['start'][el].copy_liquidity()
                 function_type_result['end'][el] = function_type['end'][el].copy_liquidity()
         return function_type_result
-
-    def resolve_partial_evaluation(self, e: LiqExpr) -> LiqExpr:
-        if e.value in LiqConst.CONSTANTS or LiqConst.XI in e.value:
-            # if e=0 or e=1 or e=ξ
-            return LiqExpr(e.value)
-
-        e_left = self.resolve_partial_evaluation(e.left)
-        e_right = self.resolve_partial_evaluation(e.right)
-        if e.value == LiqConst.UPPER:
-            # if   e = e' u e''   and   (e' = 1   or   e'' = 1)
-            if e_left == LiqExpr(LiqConst.FULL) or e_right == LiqExpr(LiqConst.FULL):
-                return LiqExpr(LiqConst.FULL)
-
-            # if   (e = e' u e''   or   e = e'' u e')   and   e'' = 0
-            if e_left == LiqExpr(LiqConst.EMPTY):
-                return e_right
-            if e_right == LiqExpr(LiqConst.EMPTY):
-                return e_left
-
-            # if   e = e' u e''   and no-one of the above cases applies
-            return LiqExpr(LiqConst.UPPER, e_left, e_right)
-        elif e.value == LiqConst.LOWER:
-            # if   e = e' n e''   and   (e' = 0   or   e'' = 0)
-            if e_left == LiqExpr(LiqConst.EMPTY) or e_right == LiqExpr(LiqConst.EMPTY):
-                return LiqExpr(LiqConst.EMPTY)
-
-            # if   (e = e' n e''   or   e = e'' n e')   and   e'' = 1
-            if e_left == LiqExpr(LiqConst.FULL):
-                return e_right
-            if e_right == LiqExpr(LiqConst.FULL):
-                return e_left
-
-            # if   e = e' u e''   and no-one of the above cases applies
-            return LiqExpr(LiqConst.LOWER, e_left, e_right)
-
-        print("ERROR resolve_partial_evaluation")
-        return e
-
 
 
     def __str__(self):

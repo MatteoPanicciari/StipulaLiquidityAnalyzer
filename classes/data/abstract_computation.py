@@ -9,8 +9,8 @@ class AbsComputation:
         self.configurations : tuple[FunctionVisitorEntry] = tuple()
         self.liq_type : tuple[dict[str, LiqExpr]] = tuple()
 
-        self.function_liq_type_begin : list[dict[str, LiqExpr]] = list()
-        self.function_liq_type_end : list[dict[str, LiqExpr]] = list()
+        self.liq_type_begin : list[dict[str, LiqExpr]] = list()
+        self.liq_type_end : list[dict[str, LiqExpr]] = list()
 
         if first_function:
             self.insert_function(first_function)
@@ -26,24 +26,26 @@ class AbsComputation:
         #print(f"{function_env['start']} -> {function_env['end']}")
         if self.is_first_function_missing:
             self.is_first_function_missing = False
-            self.function_liq_type_begin.append(function_env['start'])
+            self.liq_type_begin.append(function_env['start'])
             if True:    # TODO capire se gli assets vanno inizializzati effettivamente a 0
-                for h in self.function_liq_type_begin[-1]:
-                    self.function_liq_type_begin[-1][h].replace_value(str(self.function_liq_type_begin[-1][h]), LiqExpr(LiqConst.EMPTY))
+                for h in self.liq_type_begin[-1]:
+                    self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), LiqExpr(LiqConst.EMPTY))
             #print(f"begin = {self.function_liq_type_begin[-1]}")
         else:
-            self.function_liq_type_begin.append(function_env['start'])
-            for h in self.function_liq_type_begin[-1]:
-                if h in function.global_assets and str(self.function_liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
-                    h_value = self.function_liq_type_end[-1][h].copy_liquidity()
-                    self.function_liq_type_begin[-1][h].replace_value(str(self.function_liq_type_begin[-1][h]), h_value)
+            self.liq_type_begin.append(function_env['start'])
+            for h in self.liq_type_begin[-1]:
+                if h in function.global_assets and str(self.liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
+                    h_value = self.liq_type_end[-1][h].copy_liquidity()
+                    self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), h_value)
+                    self.liq_type_begin[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_begin[-1][h])
             #print(f"begin = {self.function_liq_type_begin[-1]}")
 
-        self.function_liq_type_end.append(function_env['end'])
-        for h in self.function_liq_type_end[-1]:
-            if h in function.global_assets and str(self.function_liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
-                h_value = self.function_liq_type_begin[-1][h].copy_liquidity()
-                self.function_liq_type_end[-1][h].replace_value(str(self.function_liq_type_end[-1][h]), h_value)
+        self.liq_type_end.append(function_env['end'])
+        for h in self.liq_type_end[-1]:
+            if h in function.global_assets and str(self.liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
+                h_value = self.liq_type_begin[-1][h].copy_liquidity()
+                self.liq_type_end[-1][h].replace_value(str(self.liq_type_end[-1][h]), h_value)
+                self.liq_type_end[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_end[-1][h])
         #print(f"end = {self.function_liq_type_end[-1]}")
         #print(f"{function_env['start']} -> {function_env['end']}")
 

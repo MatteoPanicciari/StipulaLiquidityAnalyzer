@@ -38,6 +38,48 @@ class LiqExpr:
             self.left = new_node.left
             self.right = new_node.right
 
+    @staticmethod
+    def resolve_partial_eval(e: LiqExpr) -> LiqExpr:
+        if e.value in LiqConst.CONSTANTS or LiqConst.XI in e.value:
+            # if e=0 or e=1 or e=ξ
+            return LiqExpr(e.value)
+
+        e_left = LiqExpr.resolve_partial_eval(e.left)
+        e_right = LiqExpr.resolve_partial_eval(e.right)
+
+        if e_left == e_right:
+            return e_left
+
+        if e.value == LiqConst.UPPER:
+            # if   e = e' u e''   and   (e' = 1   or   e'' = 1)
+            if e_left == LiqExpr(LiqConst.FULL) or e_right == LiqExpr(LiqConst.FULL):
+                return LiqExpr(LiqConst.FULL)
+
+            # if   (e = e' u e''   or   e = e'' u e')   and   e'' = 0
+            if e_left == LiqExpr(LiqConst.EMPTY):
+                return e_right
+            if e_right == LiqExpr(LiqConst.EMPTY):
+                return e_left
+
+            # if   e = e' u e''   and no-one of the above cases applies
+            return LiqExpr(LiqConst.UPPER, e_left, e_right)
+        elif e.value == LiqConst.LOWER:
+            # if   e = e' n e''   and   (e' = 0   or   e'' = 0)
+            if e_left == LiqExpr(LiqConst.EMPTY) or e_right == LiqExpr(LiqConst.EMPTY):
+                return LiqExpr(LiqConst.EMPTY)
+
+            # if   (e = e' n e''   or   e = e'' n e')   and   e'' = 1
+            if e_left == LiqExpr(LiqConst.FULL):
+                return e_right
+            if e_right == LiqExpr(LiqConst.FULL):
+                return e_left
+
+            # if   e = e' u e''   and no-one of the above cases applies
+            return LiqExpr(LiqConst.LOWER, e_left, e_right)
+
+        print("ERROR resolve_partial_evaluation")
+        return e
+
     def __str__(self):
         if self.left is None or self.right is None:
             return self.value
