@@ -17,6 +17,7 @@ class AbsComputation:
 
     def insert_function(self, function: FunctionVisitorEntry):
         self.configurations += (function,)
+        # TODO rimuovere le print
         #print('-------------------------')
         #print(function)
 
@@ -26,6 +27,9 @@ class AbsComputation:
         if self.is_first_function_missing:
             self.is_first_function_missing = False
             self.function_liq_type_begin.append(function_env['start'])
+            if True:    # TODO capire se gli assets vanno inizializzati effettivamente a 0
+                for h in self.function_liq_type_begin[-1]:
+                    self.function_liq_type_begin[-1][h].replace_value(str(self.function_liq_type_begin[-1][h]), LiqExpr(LiqConst.empty))
             #print(f"begin = {self.function_liq_type_begin[-1]}")
         else:
             self.function_liq_type_begin.append(function_env['start'])
