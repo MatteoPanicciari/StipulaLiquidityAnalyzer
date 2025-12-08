@@ -10,7 +10,7 @@ stipula Ugly {
         u -o w2
     } => @Q1
 
-    @Q0 Sam: shift()[] {
+    @Q1 Sam: shift()[] {
         w1 -o Sam
         w2 -o w1
     } => @Q1

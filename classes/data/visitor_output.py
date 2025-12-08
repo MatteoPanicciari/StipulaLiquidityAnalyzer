@@ -2,6 +2,7 @@ from classes.data.abstract_computation import AbsComputation
 from classes.data.visitor_entry import FunctionVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 
+K: int = 2 # maximum number of times a function can appear in the same abstract computation (k-canonical)
 
 class VisitorOutput:
     def __init__(self):
@@ -16,8 +17,9 @@ class VisitorOutput:
         self.functions_liq_type : dict[FunctionVisitorEntry, dict[str, dict[str, LiqExpr]]] = dict()
         self.abs_computations_liq_type : dict[AbsComputation, tuple[str, dict[str, LiqExpr]]] = dict()
 
-    def compute_results(self, name):
+    def compute_results(self, name) -> bool:
         print(f"_________________________________________\n{name}")
+        result = True
 
         print(f"\tFunction Liquidity Types:")
         for fn in self.functions:
@@ -31,6 +33,14 @@ class VisitorOutput:
                     self.abs_computations_to_final_state.add(abs_computation)
                     print(f"\t\t{abs_computation}")
                     print(f"\t\t\t{abs_computation.liq_type_begin[0]} -> {abs_computation.liq_type_end[-1]}")
+                    for h in abs_computation.liq_type_end[-1]:
+                        result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
+
+        if not self.abs_computations_to_final_state:
+            return False
+
+        return result
+
 
     def set_init_state_id(self, state_id):
         self.Q0 = state_id
@@ -62,14 +72,14 @@ class VisitorOutput:
             for current_fn in self.functions:
                 set_tuples_to_add = set()
                 for previous_fn in self.functions:
+                    # checks if previous_fn goes to current_function start state
                     if previous_fn.end_state == current_fn.start_state:
-                        # check if previous_fn goes to current_function start state
-                        for previous_fn_tuple in self.abs_computations[previous_fn]:
+                        for previous_fn_abs_computation in self.abs_computations[previous_fn]:
                             # foreach tuple in previous_fn.set:
                             #   checks if the current function appears less than k times in the tuple
                             #   if True, add the function to the tuple
-                            new_previous_fn_tuple = previous_fn_tuple
-                            if previous_fn_tuple.count(current_fn) < LiqConst.K:
+                            new_previous_fn_tuple = previous_fn_abs_computation.copy_abs_computation()
+                            if previous_fn_abs_computation.count(current_fn) < K:
                                 new_previous_fn_tuple.insert_function(current_fn)
                             set_tuples_to_add.add(new_previous_fn_tuple)
 

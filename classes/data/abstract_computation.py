@@ -1,3 +1,4 @@
+from __future__ import annotations
 from classes.data.visitor_entry import FunctionVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 from collections import Counter
@@ -59,3 +60,28 @@ class AbsComputation:
             result = f"{result}{configuration}; "
         return result
     __repr__ = __str__
+
+    def copy_abs_computation(self) -> AbsComputation:
+        result = AbsComputation()
+        for configuration in self.configurations:
+            result.insert_function(configuration)
+        self.is_first_function_missing = len(self.configurations) == 0
+
+        return result
+
+    def __eq__(self, other):
+        if isinstance(other, AbsComputation):
+            return self.configurations == other.configurations
+        return False
+
+    # used when an AbsComputation obj is added into a structure like a set
+    # called by set.difference()
+    def __hash__(self):
+        def dict_to_tuple(d):
+            return tuple(sorted((k, str(v)) for k, v in d.items()))
+
+        return hash((
+            self.configurations,
+            tuple(dict_to_tuple(d) for d in self.liq_type_begin),
+            tuple(dict_to_tuple(d) for d in self.liq_type_end),
+        ))

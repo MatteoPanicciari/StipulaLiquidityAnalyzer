@@ -11,7 +11,6 @@ class LiqConst:
     CONSTANTS = [EMPTY, FULL]
 
     XI : str = 'ξ'
-    K: int = 1  # maximum number of times a function can appear in the same abstract computation (k-canonical)
 
 class LiqExpr:
     def __init__(self, value: str, left:LiqExpr=None, right:LiqExpr=None):

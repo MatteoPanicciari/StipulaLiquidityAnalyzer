@@ -24,7 +24,11 @@ class Visitor(StipulaVisitor):
 
         self.visitor_output.compute_r()
         self.visitor_output.compute_final_states()
-        self.visitor_output.compute_results(ctx.ID())
+        result = self.visitor_output.compute_results(ctx.ID())
+        if result:
+            print(f"\n{ctx.ID()} is liquid")
+        else:
+            print(f"\n{ctx.ID()} is NOT liquid")
 
     def visitAssetsDecl(self, ctx:StipulaParser.AssetsDeclContext):
         """
