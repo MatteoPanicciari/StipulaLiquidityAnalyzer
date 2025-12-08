@@ -24,13 +24,13 @@ class FunctionVisitorEntry(VisitorEntry):
         self.local_assets = local_assets
 
         for h in global_assets:
-            self.function_type_input[h] = LiqExpr(f'{LiqConst.xi}{self.xi_count}')
-            self.function_type_output[h] = [LiqExpr(f'{LiqConst.xi}{self.xi_count}')]
+            self.function_type_input[h] = LiqExpr(f'{LiqConst.XI}{self.xi_count}')
+            self.function_type_output[h] = [LiqExpr(f'{LiqConst.XI}{self.xi_count}')]
             self.xi_count += 1
 
         for p in local_assets:
-            self.function_type_input[p] = LiqExpr(LiqConst.full)
-            self.function_type_output[p] = [LiqExpr(LiqConst.full)]
+            self.function_type_input[p] = LiqExpr(LiqConst.FULL)
+            self.function_type_output[p] = [LiqExpr(LiqConst.FULL)]
 
     def add_function_level(self):
         for el in self.function_type_output:
@@ -70,38 +70,38 @@ class FunctionVisitorEntry(VisitorEntry):
         return function_type_result
 
     def resolve_partial_evaluation(self, e: LiqExpr) -> LiqExpr:
-        if e.value in LiqConst.constants or LiqConst.xi in e.value:
+        if e.value in LiqConst.CONSTANTS or LiqConst.XI in e.value:
             # if e=0 or e=1 or e=ξ
             return LiqExpr(e.value)
 
         e_left = self.resolve_partial_evaluation(e.left)
         e_right = self.resolve_partial_evaluation(e.right)
-        if e.value == LiqConst.upper_operator:
+        if e.value == LiqConst.UPPER:
             # if   e = e' u e''   and   (e' = 1   or   e'' = 1)
-            if e_left == LiqExpr(LiqConst.full) or e_right == LiqExpr(LiqConst.full):
-                return LiqExpr(LiqConst.full)
+            if e_left == LiqExpr(LiqConst.FULL) or e_right == LiqExpr(LiqConst.FULL):
+                return LiqExpr(LiqConst.FULL)
 
             # if   (e = e' u e''   or   e = e'' u e')   and   e'' = 0
-            if e_left == LiqExpr(LiqConst.empty):
+            if e_left == LiqExpr(LiqConst.EMPTY):
                 return e_right
-            if e_right == LiqExpr(LiqConst.empty):
+            if e_right == LiqExpr(LiqConst.EMPTY):
                 return e_left
 
             # if   e = e' u e''   and no-one of the above cases applies
-            return LiqExpr(LiqConst.upper_operator, e_left, e_right)
-        elif e.value == LiqConst.lower_operator:
+            return LiqExpr(LiqConst.UPPER, e_left, e_right)
+        elif e.value == LiqConst.LOWER:
             # if   e = e' n e''   and   (e' = 0   or   e'' = 0)
-            if e_left == LiqExpr(LiqConst.empty) or e_right == LiqExpr(LiqConst.empty):
-                return LiqExpr(LiqConst.empty)
+            if e_left == LiqExpr(LiqConst.EMPTY) or e_right == LiqExpr(LiqConst.EMPTY):
+                return LiqExpr(LiqConst.EMPTY)
 
             # if   (e = e' n e''   or   e = e'' n e')   and   e'' = 1
-            if e_left == LiqExpr(LiqConst.full):
+            if e_left == LiqExpr(LiqConst.FULL):
                 return e_right
-            if e_right == LiqExpr(LiqConst.full):
+            if e_right == LiqExpr(LiqConst.FULL):
                 return e_left
 
             # if   e = e' u e''   and no-one of the above cases applies
-            return LiqExpr(LiqConst.lower_operator, e_left, e_right)
+            return LiqExpr(LiqConst.LOWER, e_left, e_right)
 
         print("ERROR resolve_partial_evaluation")
         return e

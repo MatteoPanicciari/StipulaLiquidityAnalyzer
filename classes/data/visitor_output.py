@@ -1,10 +1,9 @@
 from classes.data.abstract_computation import AbsComputation
 from classes.data.visitor_entry import FunctionVisitorEntry
-from classes.data.liquidity_expression import LiqExpr
+from classes.data.liquidity_expression import LiqExpr, LiqConst
+
 
 class VisitorOutput:
-    k = 1   # maximum number of times a function can appear in the same abstract computation (k-canonical)
-
     def __init__(self):
         self.Q0 : str = ''  # initial state
         self.parties: list[str] = list()
@@ -70,7 +69,7 @@ class VisitorOutput:
                             #   checks if the current function appears less than k times in the tuple
                             #   if True, add the function to the tuple
                             new_previous_fn_tuple = previous_fn_tuple
-                            if previous_fn_tuple.count(current_fn) < self.k:
+                            if previous_fn_tuple.count(current_fn) < LiqConst.K:
                                 new_previous_fn_tuple.insert_function(current_fn)
                             set_tuples_to_add.add(new_previous_fn_tuple)
 

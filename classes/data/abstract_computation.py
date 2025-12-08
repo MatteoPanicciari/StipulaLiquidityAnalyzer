@@ -29,19 +29,19 @@ class AbsComputation:
             self.function_liq_type_begin.append(function_env['start'])
             if True:    # TODO capire se gli assets vanno inizializzati effettivamente a 0
                 for h in self.function_liq_type_begin[-1]:
-                    self.function_liq_type_begin[-1][h].replace_value(str(self.function_liq_type_begin[-1][h]), LiqExpr(LiqConst.empty))
+                    self.function_liq_type_begin[-1][h].replace_value(str(self.function_liq_type_begin[-1][h]), LiqExpr(LiqConst.EMPTY))
             #print(f"begin = {self.function_liq_type_begin[-1]}")
         else:
             self.function_liq_type_begin.append(function_env['start'])
             for h in self.function_liq_type_begin[-1]:
-                if h in function.global_assets and str(self.function_liq_type_begin[-1][h]) not in LiqConst.constants:
+                if h in function.global_assets and str(self.function_liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
                     h_value = self.function_liq_type_end[-1][h].copy_liquidity()
                     self.function_liq_type_begin[-1][h].replace_value(str(self.function_liq_type_begin[-1][h]), h_value)
             #print(f"begin = {self.function_liq_type_begin[-1]}")
 
         self.function_liq_type_end.append(function_env['end'])
         for h in self.function_liq_type_end[-1]:
-            if h in function.global_assets and str(self.function_liq_type_end[-1][h]) not in LiqConst.constants:
+            if h in function.global_assets and str(self.function_liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
                 h_value = self.function_liq_type_begin[-1][h].copy_liquidity()
                 self.function_liq_type_end[-1][h].replace_value(str(self.function_liq_type_end[-1][h]), h_value)
         #print(f"end = {self.function_liq_type_end[-1]}")

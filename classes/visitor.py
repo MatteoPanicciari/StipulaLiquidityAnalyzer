@@ -81,7 +81,7 @@ class Visitor(StipulaVisitor):
                     return {}
 
                 for el in function_visitor_entry.function_type_output:
-                    function_visitor_entry.set_field_value(el, LiqExpr(LiqConst.upper_operator, then_environment[el], else_environment[el]))
+                    function_visitor_entry.set_field_value(el, LiqExpr(LiqConst.UPPER, then_environment[el], else_environment[el]))
                 return function_visitor_entry.get_function_type()['end']
 
         print("ERROR visitIfThenElse")
@@ -115,7 +115,7 @@ class Visitor(StipulaVisitor):
                         # [L-EXPAUND]
                         destination_value = function_visitor_entry.get_current_field_value(destination_id)
                         left_value = function_visitor_entry.get_current_field_value(left_id)
-                        destination_value.add_operation(LiqConst.upper_operator, left_value)
+                        destination_value.add_operation(LiqConst.UPPER, left_value)
                 pass
             else:
                 # left -o destination
@@ -128,9 +128,9 @@ class Visitor(StipulaVisitor):
                         # [L-AUPDATE]
                         destination_value = function_visitor_entry.get_current_field_value(destination_id)
                         left_value = function_visitor_entry.get_current_field_value(left_id)
-                        destination_value.add_operation(LiqConst.upper_operator, left_value)
+                        destination_value.add_operation(LiqConst.UPPER, left_value)
                     # [L-AUPDATE] [L-ASEND]
-                    function_visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.empty))
+                    function_visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.EMPTY))
                 else:
                     # left is a value
                     # TODO ?
