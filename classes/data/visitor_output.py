@@ -23,7 +23,7 @@ class VisitorOutput:
         print(f"\tFunction Liquidity Types:")
         for fn in self.functions:
             self.functions_liq_type[fn] = fn.get_function_type()
-            print(f"\t\t{fn} : {self.functions_liq_type[fn]['in']} -> {self.functions_liq_type[fn]['out']}")
+            print(f"\t\t{fn} : {self.functions_liq_type[fn]['start']} -> {self.functions_liq_type[fn]['end']}")
 
         print(f"\tAbstract Computations to Final States:")
         for fn in self.abs_computations:

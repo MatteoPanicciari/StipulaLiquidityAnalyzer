@@ -48,9 +48,8 @@ class Visitor(StipulaVisitor):
         Visit function declaration
         i.e. FunctionVisitorEntry call : (start_state=Q0, handler=Alice, code_id=fill, end_state=Q1, code_reference=(9, 11))
         """
-        list_of_xi = [a for a in self.visitor_output.global_assets]
         list_of_ones = [a.text for a in ctx.assetId]
-        function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text, ctx.functionId.text, ctx.endStateId.text, CodeReference(ctx.start.line, ctx.stop.line), list_of_xi, list_of_ones)
+        function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text, ctx.functionId.text, ctx.endStateId.text, CodeReference(ctx.start.line, ctx.stop.line), self.visitor_output.global_assets, list_of_ones)
         self.visitor_output.add_visitor_entry(function_visitor_entry)   # update C and Lc on visitor_output
 
         # visit function body
@@ -83,7 +82,7 @@ class Visitor(StipulaVisitor):
 
                 for el in function_visitor_entry.function_type_output:
                     function_visitor_entry.set_field_value(el, LiqExpr(LiqConst.upper_operator, then_environment[el], else_environment[el]))
-                return function_visitor_entry.get_function_type()['out']
+                return function_visitor_entry.get_function_type()['end']
 
         print("ERROR visitIfThenElse")
         return {}
@@ -99,7 +98,7 @@ class Visitor(StipulaVisitor):
                 self.visitFieldOperation(func_statement_ctx.fieldOperation())
             else:
                 print("ERROR visitFunctionDecl")
-        result = function_visitor_entry.get_function_type()['out']
+        result = function_visitor_entry.get_function_type()['end']
         function_visitor_entry.del_function_level()
         return result
 

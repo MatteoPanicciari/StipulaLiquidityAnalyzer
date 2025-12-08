@@ -18,7 +18,7 @@ class LiqExpr:
 
     def add_operation(self, operation: str, right: LiqExpr):
         if operation in LiqConst.operators:
-            old_node = LiqExpr(self.value, self.left, self.right)
+            old_node = self.copy()
             self.left = old_node
             self.right = right
             self.value = operation
@@ -36,3 +36,6 @@ class LiqExpr:
         if isinstance(other, LiqExpr):
             return self.value == other.value and self.left == other.left and self.right == other.right
         return False
+
+    def copy(self) -> LiqExpr:
+        return LiqExpr(self.value, self.left, self.right)

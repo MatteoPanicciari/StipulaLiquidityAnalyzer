@@ -15,13 +15,13 @@ class VisitorEntry:
 
 class FunctionVisitorEntry(VisitorEntry):
     xi_count : int = 1
-    def __init__(self, start_state, handler, code_id, end_state, code_reference, xi, ones):
+    def __init__(self, start_state, handler, code_id, end_state, code_reference, global_assets, local_assets):
         super().__init__(start_state, handler, code_id, end_state, code_reference)
 
         self.function_type_input: dict[str, LiqExpr] = {}
         self.function_type_output: dict[str, list[LiqExpr | None]] = {}
 
-        for h in xi:
+        for h in global_assets:
             self.function_type_input[h] = LiqExpr(f'{LiqConst.xi}{self.xi_count}')
             self.function_type_output[h] = [LiqExpr(f'{LiqConst.xi}{self.xi_count}')]
             self.xi_count += 1
