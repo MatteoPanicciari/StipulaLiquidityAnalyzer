@@ -124,6 +124,7 @@ class Visitor(StipulaVisitor):
             left_type = self.visitExpression(ctx.expression())
             if ctx.ID(1):
                 # left -o right,destination
+                right_id = ctx.ID(0).getText()
                 destination_id = ctx.ID(1).getText()
                 if left_type == 'ID':
                     # left is an asset
@@ -133,7 +134,7 @@ class Visitor(StipulaVisitor):
                         destination_value = function_visitor_entry.get_current_field_value(destination_id)
                         left_value = function_visitor_entry.get_current_field_value(left_id)
                         destination_value.add_operation(LiqConst.UPPER, left_value)
-                pass
+                        function_visitor_entry.asset_types.merge_types(left_id, right_id)
             else:
                 # left -o destination
                 destination_id = ctx.ID(0).getText()
@@ -148,6 +149,8 @@ class Visitor(StipulaVisitor):
                         destination_value.add_operation(LiqConst.UPPER, left_value)
                     # [L-AUPDATE] [L-ASEND]
                     function_visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.EMPTY))
+                    if destination_id not in self.visitor_output.parties:
+                        function_visitor_entry.asset_types.merge_types(left_id, destination_id)
                 else:
                     # left is a value
                     # TODO ?

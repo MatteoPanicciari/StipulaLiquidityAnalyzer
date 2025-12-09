@@ -26,9 +26,11 @@ class VisitorOutput:
         result = True
 
         print(f"\tFunction Liquidity Types:")
-        for fn in self.entries:
-            self.functions_liq_type[fn] = fn.get_env()
-            print(f"\t\t{fn} : {self.functions_liq_type[fn]['start']} -> {self.functions_liq_type[fn]['end']}")
+        for entry in self.entries:
+            self.functions_liq_type[entry] = entry.get_env()
+            print(f"\t\t{entry}")
+            print(f"\t\t\t{self.functions_liq_type[entry]['start']} -> {self.functions_liq_type[entry]['end']}")
+            print(f"\t\t\t{entry.asset_types}")
 
         print(f"\tAbstract Computations to Final States:")
         for fn in self.abs_computations:

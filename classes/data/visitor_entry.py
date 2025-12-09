@@ -1,3 +1,4 @@
+from classes.data.asset_types import AssetTypes
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 
 class CodeReference:
@@ -18,10 +19,13 @@ class VisitorEntry:
 
         self.global_assets = global_assets
 
+        self.asset_types : AssetTypes = AssetTypes()
+
         for h in global_assets:
             self.input_type[h] = LiqExpr(f'{LiqConst.XI}{self.xi_count}')
             self.output_type[h] = [LiqExpr(f'{LiqConst.XI}{self.xi_count}')]
             self.xi_count += 1
+            self.asset_types.add_singleton(h)
 
     def add_env_level(self):
         for el in self.output_type:
@@ -67,6 +71,7 @@ class FunctionVisitorEntry(VisitorEntry):
         for p in local_assets:
             self.input_type[p] = LiqExpr(LiqConst.FULL)
             self.output_type[p] = [LiqExpr(LiqConst.FULL)]
+            self.asset_types.add_singleton(p)
 
     def __str__(self):
         return f"{self.start_state} {self.handler}:{self.code_id} {self.end_state}"
