@@ -2,7 +2,7 @@ from classes.data.abstract_computation import AbsComputation
 from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 
-K: int = 2
+K: int = 1
 # maximum number of times a function can appear in the same abstract computation (k-canonical)
 
 class VisitorOutput:
@@ -34,11 +34,12 @@ class VisitorOutput:
 
         print(f"\tAbstract Computations to Final States:")
         for fn in self.abs_computations:
-            if fn.end_state in self.final_states:
+            #if fn.end_state in self.final_states:
                 for abs_computation in self.abs_computations[fn]:
                     self.abs_computations_to_final_state.add(abs_computation)
                     print(f"\t\t{abs_computation}")
                     print(f"\t\t\t{abs_computation.liq_type_begin[0]} -> {abs_computation.liq_type_end[-1]}")
+                    print(f"\t\t\t{abs_computation.asset_types}")
                     for h in abs_computation.liq_type_end[-1]:
                         result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 class AssetTypes:
     def __init__(self):
         self.type_groups : set[frozenset[str]] = set()
@@ -29,12 +31,15 @@ class AssetTypes:
         self.type_groups.add(merged)
         return True
 
+    def __iter__(self):
+        return iter(self.type_groups)
+
     def __str__(self):
         result = ''
         for g in self.type_groups:
             result += '('
             for e in g:
-                result += f"{e} , "
-            result = result[:-3] + '), '
+                result += f"{e}, "
+            result = result[:-2] + '); '
         return result[:-2]
     __repr__ = __str__

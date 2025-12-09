@@ -52,7 +52,7 @@ class VisitorEntry:
             output_type_result[el] = LiqExpr.resolve_partial_eval(self.get_current_field_value(el))
         return {'start': self.input_type, 'end': output_type_result}
 
-    def copy_env(self) -> dict[str, dict[str, LiqExpr]]:
+    def copy_global_env(self) -> dict[str, dict[str, LiqExpr]]:
         entry_type = self.get_env()
         entry_type_result = dict(start=dict(), end=dict())
         for el in self.global_assets:
