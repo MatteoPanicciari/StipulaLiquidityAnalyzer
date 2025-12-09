@@ -1,58 +1,49 @@
 from __future__ import annotations
-from classes.data.visitor_entry import FunctionVisitorEntry
+from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 from collections import Counter
 
 class AbsComputation:
-    def __init__(self, first_function: FunctionVisitorEntry = None):
+    def __init__(self, first_function: FunctionVisitorEntry | EventVisitorEntry = None):
         self.is_first_function_missing = True
 
-        self.configurations : tuple[FunctionVisitorEntry] = tuple()
+        self.configurations : tuple[FunctionVisitorEntry | EventVisitorEntry] = tuple()
         self.liq_type : tuple[dict[str, LiqExpr]] = tuple()
 
         self.liq_type_begin : list[dict[str, LiqExpr]] = list()
         self.liq_type_end : list[dict[str, LiqExpr]] = list()
 
         if first_function:
-            self.insert_function(first_function)
+            self.insert_configuration(first_function)
 
-    def insert_function(self, function: FunctionVisitorEntry):
-        self.configurations += (function,)
-        # TODO rimuovere le print
-        #print('-------------------------')
-        #print(function)
+    def insert_configuration(self, entry: FunctionVisitorEntry | EventVisitorEntry):
+        self.configurations += (entry,)
 
         # Compute: Liquidity type of abstract computation (Def 3)
-        function_env = function.copy_function_type(only_global=True)    # TODO capire se qui vada effettivamente False
-        #print(f"{function_env['start']} -> {function_env['end']}")
+        entry_env = entry.copy_env()
         if self.is_first_function_missing:
             self.is_first_function_missing = False
-            self.liq_type_begin.append(function_env['start'])
+            self.liq_type_begin.append(entry_env['start'])
             if True:    # TODO capire se gli assets vanno inizializzati effettivamente a 0
                 for h in self.liq_type_begin[-1]:
                     self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), LiqExpr(LiqConst.EMPTY))
-            #print(f"begin = {self.function_liq_type_begin[-1]}")
         else:
-            self.liq_type_begin.append(function_env['start'])
+            self.liq_type_begin.append(entry_env['start'])
             for h in self.liq_type_begin[-1]:
-                if h in function.global_assets and str(self.liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
+                if h in entry.global_assets and str(self.liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
                     h_value = self.liq_type_end[-1][h].copy_liquidity()
                     self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), h_value)
                     self.liq_type_begin[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_begin[-1][h])
-            #print(f"begin = {self.function_liq_type_begin[-1]}")
 
-        self.liq_type_end.append(function_env['end'])
+        self.liq_type_end.append(entry_env['end'])
         for h in self.liq_type_end[-1]:
-            if h in function.global_assets and str(self.liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
+            if h in entry.global_assets and str(self.liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
                 h_value = self.liq_type_begin[-1][h].copy_liquidity()
                 self.liq_type_end[-1][h].replace_value(str(self.liq_type_end[-1][h]), h_value)
                 self.liq_type_end[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_end[-1][h])
-        #print(f"end = {self.function_liq_type_end[-1]}")
-        #print(f"{function_env['start']} -> {function_env['end']}")
 
-
-    def count(self, function: FunctionVisitorEntry):
-        return Counter(self.configurations)[function]
+    def count(self, entry: FunctionVisitorEntry | EventVisitorEntry):
+        return Counter(self.configurations)[entry]
 
     def __str__(self):
         result = ''
@@ -64,7 +55,7 @@ class AbsComputation:
     def copy_abs_computation(self) -> AbsComputation:
         result = AbsComputation()
         for configuration in self.configurations:
-            result.insert_function(configuration)
+            result.insert_configuration(configuration)
         self.is_first_function_missing = len(self.configurations) == 0
 
         return result

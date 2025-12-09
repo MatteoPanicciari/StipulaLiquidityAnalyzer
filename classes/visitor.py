@@ -1,7 +1,7 @@
 from generated.StipulaVisitor import StipulaVisitor
 from generated.StipulaParser import StipulaParser
 
-from classes.data.visitor_entry import FunctionVisitorEntry, CodeReference
+from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry, CodeReference
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 from classes.data.visitor_output import VisitorOutput
 
@@ -25,10 +25,11 @@ class Visitor(StipulaVisitor):
         self.visitor_output.compute_r()
         self.visitor_output.compute_final_states()
         result = self.visitor_output.compute_results(ctx.ID())
-        if result:
+        if result[0]:
             print(f"\n{ctx.ID()} is liquid")
         else:
             print(f"\n{ctx.ID()} is NOT liquid")
+        print(f"has events: {result[1]}")
 
     def visitAssetsDecl(self, ctx:StipulaParser.AssetsDeclContext):
         """
@@ -52,8 +53,12 @@ class Visitor(StipulaVisitor):
         Visit function declaration
         i.e. FunctionVisitorEntry call : (start_state=Q0, handler=Alice, code_id=fill, end_state=Q1, code_reference=(9, 11))
         """
-        list_of_ones = [a.text for a in ctx.assetId]
-        function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text, ctx.functionId.text, ctx.endStateId.text, CodeReference(ctx.start.line, ctx.stop.line), self.visitor_output.global_assets, list_of_ones)
+        list_of_local_assets = [a.text for a in ctx.assetId]
+        function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text,
+                                                      ctx.functionId.text, ctx.endStateId.text,
+                                                      CodeReference(ctx.start.line, ctx.stop.line),
+                                                      self.visitor_output.global_assets, list_of_local_assets,
+                                                      False)
         self.visitor_output.add_visitor_entry(function_visitor_entry)   # update C and Lc on visitor_output
 
         # visit function body
@@ -66,6 +71,13 @@ class Visitor(StipulaVisitor):
                 self.visitFieldOperation(func_statement_ctx.fieldOperation())
             else:
                 print("ERROR visitFunctionDecl")
+        for func_event_ctx in ctx.functionBody().eventDecl():
+            self.visitEventDecl(func_event_ctx)
+
+    def visitEventDecl(self, ctx:StipulaParser.EventDeclContext):
+        event_visitor_entry = EventVisitorEntry(ctx.trigger.getText(), ctx.startStateId.text, ctx.endStateId.text,
+                                                CodeReference(ctx.start.line, ctx.stop.line), self.visitor_output.global_assets)
+        self.visitor_output.add_visitor_entry(event_visitor_entry)
 
     def visitIfThenElse(self, ctx: StipulaParser.IfThenElseContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiqExpr]:
         if ctx.expression():
@@ -84,15 +96,15 @@ class Visitor(StipulaVisitor):
                     print("ERROR visitIfThenElse")
                     return {}
 
-                for el in function_visitor_entry.function_type_output:
+                for el in function_visitor_entry.output_type:
                     function_visitor_entry.set_field_value(el, LiqExpr(LiqConst.UPPER, then_environment[el], else_environment[el]))
-                return function_visitor_entry.get_function_type()['end']
+                return function_visitor_entry.get_env()['end']
 
         print("ERROR visitIfThenElse")
         return {}
 
     def visitFunctionBody(self, ctx: StipulaParser.FunctionBodyContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiqExpr]:
-        function_visitor_entry.add_function_level()
+        function_visitor_entry.add_env_level()
         for func_statement_ctx in ctx.statement():
             if func_statement_ctx.ifThenElse():
                 self.visitIfThenElse(func_statement_ctx.ifThenElse(), function_visitor_entry)
@@ -102,8 +114,8 @@ class Visitor(StipulaVisitor):
                 self.visitFieldOperation(func_statement_ctx.fieldOperation())
             else:
                 print("ERROR visitFunctionDecl")
-        result = function_visitor_entry.get_function_type()['end']
-        function_visitor_entry.del_function_level()
+        result = function_visitor_entry.get_env()['end']
+        function_visitor_entry.del_env_level()
         return result
 
     def visitAssetOperation(self, ctx: StipulaParser.AssetOperationContext, function_visitor_entry: FunctionVisitorEntry = None):
