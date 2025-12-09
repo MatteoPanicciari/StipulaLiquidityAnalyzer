@@ -30,6 +30,7 @@ class Visitor(StipulaVisitor):
         else:
             print(f"\n{ctx.ID()} is NOT liquid")
         print(f"has events: {result[1]}")
+        print(f"has guards: {result[2]}")
 
     def visitAssetsDecl(self, ctx:StipulaParser.AssetsDeclContext):
         """
@@ -54,12 +55,12 @@ class Visitor(StipulaVisitor):
         i.e. FunctionVisitorEntry call : (start_state=Q0, handler=Alice, code_id=fill, end_state=Q1, code_reference=(9, 11))
         """
         list_of_local_assets = [a.text for a in ctx.assetId]
+        has_guard = bool(ctx.precondition)
         function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text,
                                                       ctx.functionId.text, ctx.endStateId.text,
                                                       CodeReference(ctx.start.line, ctx.stop.line),
-                                                      self.visitor_output.global_assets, list_of_local_assets,
-                                                      False)
-        self.visitor_output.add_visitor_entry(function_visitor_entry)   # update C and Lc on visitor_output
+                                                      self.visitor_output.global_assets, list_of_local_assets, has_guard)
+        self.visitor_output.add_visitor_entry(function_visitor_entry, has_guard)   # update C and Lc on visitor_output
 
         # visit function body
         for func_statement_ctx in ctx.functionBody().statement():

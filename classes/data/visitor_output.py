@@ -19,8 +19,9 @@ class VisitorOutput:
         self.abs_computations_liq_type : dict[AbsComputation, tuple[str, dict[str, LiqExpr]]] = dict()
 
         self.has_events: bool = False
+        self.has_guards: bool = False
 
-    def compute_results(self, name) -> tuple[bool, bool]:
+    def compute_results(self, name) -> tuple[bool, bool, bool]:
         print(f"_________________________________________\n{name}")
         result = True
 
@@ -40,9 +41,9 @@ class VisitorOutput:
                         result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
 
         if not self.abs_computations_to_final_state:
-            return False, self.has_events
+            return False, self.has_events, self.has_guards
 
-        return result, self.has_events
+        return result, self.has_events, self.has_guards
 
 
     def set_init_state_id(self, state_id):
@@ -51,10 +52,12 @@ class VisitorOutput:
     def add_party(self, party_id):
         self.parties.append(party_id)
 
-    def add_visitor_entry(self, visitor_entry: FunctionVisitorEntry | EventVisitorEntry):
+    def add_visitor_entry(self, visitor_entry: FunctionVisitorEntry | EventVisitorEntry, has_guard: bool = False):
         self.entries.add(visitor_entry)
         if type(visitor_entry).__name__ == EventVisitorEntry.__name__:
             self.has_events = True
+        if has_guard:
+            self.has_guards = True
 
     def add_global_asset(self, asset):
         self.global_assets.append(asset.text)
