@@ -22,11 +22,15 @@ class Visitor(StipulaVisitor):
         for function_decl_ctx in ctx.functionDecl():
             self.visitFunctionDecl(function_decl_ctx)
 
-        self.visitor_output.compute_r()
-        self.visitor_output.compute_final_states()
-        result = self.visitor_output.compute_results(ctx.ID())
+        print(f"_________________________________________\n{ctx.ID()}")
+        result = self.visitor_output.compute_function_local_liquidity()
         if result[0]:
-            print(f"\n{ctx.ID()} is liquid")
+            self.visitor_output.compute_r()
+            self.visitor_output.compute_final_states()
+            if self.visitor_output.compute_results():
+                print(f"\n{ctx.ID()} is liquid")
+            else:
+                print(f"\n{ctx.ID()} is NOT liquid")
         else:
             print(f"\n{ctx.ID()} is NOT liquid")
         print(f"has events: {result[1]}")

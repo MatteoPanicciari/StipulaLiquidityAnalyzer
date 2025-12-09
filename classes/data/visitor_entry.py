@@ -65,6 +65,7 @@ class FunctionVisitorEntry(VisitorEntry):
         super().__init__(start_state, end_state, code_reference, global_assets)
         self.code_id = code_id
         self.handler = handler
+
         self.local_assets = local_assets
         self.has_guard = has_guard
 
@@ -72,6 +73,14 @@ class FunctionVisitorEntry(VisitorEntry):
             self.input_type[p] = LiqExpr(LiqConst.FULL)
             self.output_type[p] = [LiqExpr(LiqConst.FULL)]
             self.asset_types.add_singleton(p)
+
+    def compute_local_liquidity(self) -> list[str]:
+        result = []
+        env_end = self.get_env()['end']
+        for p in self.local_assets:
+            if not env_end[p] == LiqExpr(LiqConst.EMPTY):
+                result.append(p)
+        return result
 
     def __str__(self):
         return f"{self.start_state} {self.handler}:{self.code_id} {self.end_state}"

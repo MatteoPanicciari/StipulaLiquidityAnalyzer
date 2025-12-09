@@ -21,8 +21,7 @@ class VisitorOutput:
         self.has_events: bool = False
         self.has_guards: bool = False
 
-    def compute_results(self, name) -> tuple[bool, bool, bool]:
-        print(f"_________________________________________\n{name}")
+    def compute_results(self) -> bool:
         result = True
 
         print(f"\tFunction Liquidity Types:")
@@ -44,9 +43,18 @@ class VisitorOutput:
                         result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
 
         if not self.abs_computations_to_final_state:
-            return False, self.has_events, self.has_guards
+            return False
 
-        return result, self.has_events, self.has_guards
+        return result
+
+    def compute_function_local_liquidity(self) -> tuple[bool, bool, bool]:
+        for entry in self.entries:
+            if type(entry).__name__ == FunctionVisitorEntry.__name__:
+                p = entry.compute_local_liquidity()
+                if p:
+                    print(f"\t{entry}\n\t\tis NOT local liquid: {p}")
+                    return False, self.has_events, self.has_guards
+        return True, self.has_events, self.has_guards
 
 
     def set_init_state_id(self, state_id):
