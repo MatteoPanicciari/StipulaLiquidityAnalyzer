@@ -22,7 +22,11 @@ if __name__ == '__main__':
     #_main('./TESTS/Bike_Rental_Refined.stipula')
     #_main('./TESTS/Ugly.stipula')
     _main('./TESTS/Fill_Move.stipula')
-    #_main('./TESTS/Non_Liquid_Fill_Move.stipula')
-    _main('./TESTS/AdvancedTest4.stipula')
-    _main('./TESTS/Ping_Pong.stipula')
+    _main('./TESTS/Non_Liquid_Fill_Move.stipula')
+    #_main('./TESTS/AdvancedTest4.stipula')
+    #_main('./TESTS/Ping_Pong.stipula')
     #_main('./TESTS/Bet.stipula')
+
+# TODO
+#   k-separate / complete
+#   se no_guard e no_events -> TRUE = True, FALSE = Maybe (per colpa di eventi che magari non vengono mai chiamati)
