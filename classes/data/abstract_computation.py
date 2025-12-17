@@ -55,6 +55,11 @@ class AbsComputation:
     def count(self, entry: FunctionVisitorEntry | EventVisitorEntry):
         return Counter(self.configurations)[entry]
 
+    def get_first_state(self) -> str:
+        if self.configurations:
+            return self.configurations[0].start_state
+        return ''
+
     def __str__(self):
         result = ''
         for configuration in self.configurations:
@@ -62,12 +67,19 @@ class AbsComputation:
         return result
     __repr__ = __str__
 
-    def copy_abs_computation(self) -> AbsComputation:
+    def copy_abs_computation(self, initial_state: str = '') -> AbsComputation:
         result = AbsComputation()
-        for configuration in self.configurations:
-            result.insert_configuration(configuration)
-        self.is_first_function_missing = len(self.configurations) == 0
-
+        if initial_state:
+            append = False
+            for configuration in self.configurations:
+                if configuration.start_state == initial_state:
+                    append = True
+                if append:
+                    result.insert_configuration(configuration)
+        else:
+            for configuration in self.configurations:
+                result.insert_configuration(configuration)
+            self.is_first_function_missing = len(self.configurations) == 0
         return result
 
     def __eq__(self, other):
@@ -86,3 +98,6 @@ class AbsComputation:
             tuple(dict_to_tuple(d) for d in self.liq_type_begin),
             tuple(dict_to_tuple(d) for d in self.liq_type_end),
         ))
+
+    def __iter__(self):
+        return iter(self.configurations)

@@ -25,8 +25,8 @@ class Visitor(StipulaVisitor):
         print(f"_________________________________________\n{ctx.ID()}")
         result = self.visitor_output.compute_function_local_liquidity()
         if result[0]:
-            self.visitor_output.compute_r()
             self.visitor_output.compute_final_states()
+            self.visitor_output.compute_r()
             if self.visitor_output.compute_results():
                 print(f"\n{ctx.ID()} is liquid")
             else:
