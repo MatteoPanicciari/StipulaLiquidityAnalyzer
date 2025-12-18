@@ -19,14 +19,17 @@ def _main(file_path):
     Visitor().visit(tree)
 
 if __name__ == '__main__':
-    #_main('./TESTS/Bike_Rental_Refined.stipula')
     _main('./TESTS/Ugly.stipula')
     _main('./TESTS/Fill_Move.stipula')
-    #_main('./TESTS/Non_Liquid_Fill_Move.stipula')
-    #_main('./TESTS/AdvancedTest4.stipula')
+    _main('./TESTS/Non_Liquid_Fill_Move.stipula')
+    _main('./TESTS/AdvancedTest4.stipula')
     _main('./TESTS/Ping_Pong.stipula')
-    #_main('./TESTS/Bet.stipula')
+    _main('./TESTS/Bet.stipula')
     _main('./TESTS/Linear_Automaton.stipula')
 
 # TODO
+#   check dei local asset per ogni funzione
+#   implementazione eventi
 #   k-separate / complete
+#   ci sono guardie/eventi
+#   tipi di asset -> cosa farci?

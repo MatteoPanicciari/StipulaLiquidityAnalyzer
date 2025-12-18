@@ -11,14 +11,15 @@ class VisitorOutput:
     def __init__(self):
         self.Q0 : str = ''  # initial state
         self.parties: list[str] = list()
-        self.global_assets: list[str] = list()
+        self.global_assets: set[str] = set()
         self.entries: set[FunctionVisitorEntry | EventVisitorEntry] = set() # set of all the clauses (Functions, Events) of the contract
         self.abs_computations: dict[FunctionVisitorEntry | EventVisitorEntry, set[AbsComputation]] = dict()
-        self.final_states: list[str] = list()
+        self.final_states: set[str] = set()
+        self.reachable_states: set[str] = set()
 
         self.states: set[str] = set()
+        self.Tqk : dict[str, set[AbsComputation]] = dict()
         self.Qq : dict[str, set[FunctionVisitorEntry | EventVisitorEntry]] = dict()
-        self.Z : set[tuple[str, Optional[str]]] = set()
 
         self.abs_computations_to_final_state : set[AbsComputation] = set()
         self.functions_liq_type : dict[FunctionVisitorEntry | EventVisitorEntry, dict[str, dict[str, LiqExpr]]] = dict()
@@ -40,9 +41,10 @@ class VisitorOutput:
         print(f"\tAbstract Computations:")
         for fn in self.abs_computations:
             for abs_computation in self.abs_computations[fn]:
+                abs_comp_env = abs_computation.get_env()
                 self.abs_computations_to_final_state.add(abs_computation)
                 print(f"\t\t{abs_computation}")
-                print(f"\t\t\t{abs_computation.liq_type_begin[0]} -> {abs_computation.liq_type_end[-1]}")
+                print(f"\t\t\t{abs_comp_env['start']} -> {abs_comp_env['end']}")
                 print(f"\t\t\t{abs_computation.asset_types}")
                 for h in abs_computation.liq_type_end[-1]:
                     result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
@@ -50,8 +52,14 @@ class VisitorOutput:
         self.compute_qq()
         print("\tLiquidity Results:")
         print("\t\tEfficient Algorithm:")
-        print(f"\t\t\tis {'' if self.efficient_algorithm() else 'NOT '}k-separate liquid")
+        print(f"\t\t\tis {'' if self.efficient_algorithm_k_separate() else 'NOT '}k-separate liquid")
         print(f"\t\t\tis {'' if self.efficient_algorithm_complete() else 'NOT '}liquid")
+        self.compute_reachable_states()
+        self.compute_tqk()
+        print("\t\tCostly Algorithm:")
+        print(f"\t\t\tis {'' if self.costly_algorithm_k_separate() else 'NOT '}k-separate liquid")
+        print(f"\t\t\tis {'' if self.costly_algorithm_complete() else 'NOT '}liquid")
+
         if not self.abs_computations_to_final_state:
             return False
 
@@ -82,7 +90,7 @@ class VisitorOutput:
             self.has_guards = True
 
     def add_global_asset(self, asset):
-        self.global_assets.append(asset.text)
+        self.global_assets.add(asset.text)
 
     def compute_r(self):
         # Base case
@@ -125,26 +133,41 @@ class VisitorOutput:
         while is_change:
             is_change = False
             for entry in self.entries:
-                before = len(self.Qq[entry.start_state])
+                prev_len = len(self.Qq[entry.start_state])
                 self.Qq[entry.start_state] |= self.Qq[entry.end_state]
                 self.Qq[entry.start_state].add(entry)
-                if len(self.Qq[entry.start_state]) > before:
+                if len(self.Qq[entry.start_state]) > prev_len:
                     is_change = True
-    def compute_final_states(self):
+
+    def compute_reachable_states(self):
+        self.reachable_states.add(self.Q0)
+        for entry in self.Qq[self.Q0]:
+            self.reachable_states.add(entry.end_state)
+
+    # TODO modificare sta roba perché fa schifo
+    #   modificare compute_R includendo anche le abs_comp che non partano da Q0, così qui fai un ciclo for in meno senza quel copy_abs_comp
+    def compute_tqk(self):
+        for state in self.states:
+            self.Tqk[state] = set()
+        for entry in self.abs_computations:
+            for abs_computation in self.abs_computations[entry]:
+                for configuration in abs_computation:
+                    self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
+
+    def compute_states(self):
         self.states = set()
         initial_states = set()
         for visitor_entry in self.entries:
-            if type(visitor_entry).__name__ == FunctionVisitorEntry.__name__:
-                self.states.add(visitor_entry.start_state)
-                self.states.add(visitor_entry.end_state)
-                initial_states.add(visitor_entry.start_state)
+            self.states.add(visitor_entry.start_state)
+            self.states.add(visitor_entry.end_state)
+            initial_states.add(visitor_entry.start_state)
         self.final_states = self.states - initial_states
 
 
-    def efficient_algorithm(self) -> bool:
+    def efficient_algorithm_k_separate(self) -> bool:
         # step 1
         self.compute_qq()
-        self.Z = set()
+        z : set[tuple[str, str]] = set()
 
         found_missing_tuple = True
         while found_missing_tuple:
@@ -156,7 +179,7 @@ class VisitorOutput:
                     # step 2.a, 2.b
                     if (entry_env['start'][k] != entry_env['end'][k] and
                         entry_env['end'][k] != LiqExpr(LiqConst.EMPTY) and
-                        (entry.end_state, k) not in self.Z
+                        (entry.end_state, k) not in z
                     ):
                         found_missing_tuple = True
                         is_missing_tuple_added = False
@@ -165,17 +188,17 @@ class VisitorOutput:
                             next_entry_env = next_entry.get_env()
                             if next_entry_env['end'][k] == LiqExpr(LiqConst.EMPTY):
                                 is_missing_tuple_added = True
-                                self.Z.add((entry.end_state, k))
+                                z.add((entry.end_state, k))
                                 break
                         if not is_missing_tuple_added:
-                            print(f"\t\t\t\t{entry}, {k}")
+                            print(f"\t\t\t\tEFFICIENT K-SEPARATE: {entry}, {k}")
                             return False
         # step 2.1
         return True
 
     def efficient_algorithm_complete(self) -> bool:
         # step 1
-        self.Z = set()
+        z : set[str] = set()
 
         h = tuple()
         for k in self.global_assets:
@@ -192,7 +215,7 @@ class VisitorOutput:
                     entry_env['end'][k] != LiqExpr(LiqConst.EMPTY)
                     for k in self.global_assets
                 )
-                if h_not_zero and entry_env['start']!=entry_env['end'] and entry.end_state not in self.Z:
+                if h_not_zero and entry_env['start']!=entry_env['end'] and entry.end_state not in z:
                     found_missing_tuple = True
                     is_missing_tuple_added = False
                     # step 2.2
@@ -204,11 +227,72 @@ class VisitorOutput:
                         )
                         if all_zero:
                             is_missing_tuple_added = True
-                            self.Z.add(entry.end_state)
+                            z.add(entry.end_state)
                             break
                     if not is_missing_tuple_added:
-                        print(f"\t\t\t\t{entry}")
+                        print(f"\t\t\t\tEFFICIENT COMPLETE: {entry}")
                         return False
         # step 2.1
         return True
-        self.final_states = states - initial_states
+
+    def costly_algorithm_k_separate(self):
+        for k in self.global_assets:
+            z : set[str] = set()
+            is_missing_state_found = True
+            while is_missing_state_found:
+                is_missing_state_found = False
+                for state in self.reachable_states:
+                    for abs_computation in self.Tqk[state]:
+                        abs_computation_env = abs_computation.get_env()
+                        if (abs_computation_env['end'][k] != LiqExpr(LiqConst.EMPTY) and
+                            abs_computation_env['start'][k] != abs_computation_env['end'][k] and
+                            abs_computation.get_last_state() not in z
+                        ):
+                            is_missing_state_found = True
+                            is_missing_state_added = False
+                            for abs_computation_p in self.Tqk[abs_computation.get_last_state()]:
+                                abs_computation_p_env = abs_computation_p.get_env()
+                                if abs_computation_p_env['end'][k] == LiqExpr(LiqConst.EMPTY):
+                                    z.add(abs_computation.get_last_state())
+                                    is_missing_state_added = True
+                                    break
+                            if not is_missing_state_added:
+                                print(f"\t\t\t\tCOSTLY K-SEPARATE: {state}, {k}, {abs_computation}")
+                                return False
+        return True
+
+    def costly_algorithm_complete(self):
+        z : set[tuple[str,frozenset[str]]] = set()
+        for state in self.reachable_states:
+            for abs_computation in self.Tqk[state]:
+                abs_computation_env = abs_computation.get_env()
+                kbar = set()
+                for k in self.global_assets:
+                    if (abs_computation_env['end'][k] != LiqExpr(LiqConst.EMPTY)
+                        and abs_computation_env['end'][k] != abs_computation_env['start'][k]
+                        and (abs_computation.get_last_state(), frozenset({k})) not in z):
+                        kbar.add(k)
+                if kbar:
+                    is_found = False
+                    for abs_computation_p in self.Tqk[abs_computation.get_last_state()]:
+                        is_abs_comp_valid = True
+                        for k in kbar:
+                            if abs_computation_p.get_env()['end'][k] != LiqExpr(LiqConst.EMPTY):
+                                is_abs_comp_valid = False
+                                break
+                        if is_abs_comp_valid:
+                            for h in self.global_assets - kbar:
+                                if (abs_computation_p.get_env()['end'][h] != LiqExpr(LiqConst.EMPTY) and
+                                    abs_computation_p.get_env()['start'][h] != abs_computation_p.get_env()['end'][h]):
+                                    is_abs_comp_valid = False
+                                    break
+                        if is_abs_comp_valid:
+                            z.add((abs_computation_p.get_last_state(), frozenset(kbar)))
+                            is_found = True
+                            break
+                    if not is_found:
+                        print(f"\t\t\t\tCOSTLY COMPLETE: {abs_computation} {kbar}")
+                        return False
+                else:
+                    return True
+        return True

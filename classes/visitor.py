@@ -22,10 +22,13 @@ class Visitor(StipulaVisitor):
         for function_decl_ctx in ctx.functionDecl():
             self.visitFunctionDecl(function_decl_ctx)
 
-        print(f"_________________________________________\n{ctx.ID()}")
+        print("___________________________________________"
+              "\n|=========================================|"
+              "\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯"
+              f"\n{ctx.ID()}")
         result = self.visitor_output.compute_function_local_liquidity()
         if result[0]:
-            self.visitor_output.compute_final_states()
+            self.visitor_output.compute_states()
             self.visitor_output.compute_r()
             if self.visitor_output.compute_results():
                 print(f"\n{ctx.ID()} is liquid")
@@ -161,7 +164,8 @@ class Visitor(StipulaVisitor):
                     pass
 
     def visitFieldOperation(self, ctx: StipulaParser.FieldOperationContext):
-        print(f"fieldOperation {ctx.getText()}")
+        #print(f"fieldOperation {ctx.getText()}")
+        pass
 
     def visitExpression(self, ctx: StipulaParser.ExpressionContext) -> str:
         if ctx.expression1():

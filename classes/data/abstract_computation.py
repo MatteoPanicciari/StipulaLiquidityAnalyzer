@@ -60,6 +60,14 @@ class AbsComputation:
             return self.configurations[0].start_state
         return ''
 
+    def get_last_state(self) -> str:
+        if self.configurations:
+            return self.configurations[-1].end_state
+        return ''
+
+    def get_env(self) -> dict[str, dict[str,LiqExpr]]:
+        return {'start': self.liq_type_begin[0], 'end': self.liq_type_end[-1]}
+
     def __str__(self):
         result = ''
         for configuration in self.configurations:
