@@ -33,3 +33,6 @@ if __name__ == '__main__':
 #   k-separate / complete
 #   ci sono guardie/eventi
 #   tipi di asset -> cosa farci?
+
+# in compute_r : controllare per ogni evento se la funzione che lo inviocava è stata chiamata precedentemente nella computazione (basta mettere in event_visitor_entry l'id della funzione invocante e fare un check)
+# oppure nell'oggetto abs_comp metti anche una lista di eventi che puoi chiamare (se la funz che contiene evento è stata invocata, aggiungo l'evento alla listam, appena chiamo l'evento, tolgo dalla lista (senza dover controlare il Count dell'evento, perche dipende linearmente da quante volte avevo chiamato la funzione "proprietaria", quindi se k=2, l'evento sara comunque chiamato al max 2 volte))

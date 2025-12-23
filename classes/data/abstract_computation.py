@@ -18,6 +18,8 @@ class AbsComputation:
 
         self.asset_types : AssetTypes = AssetTypes()
 
+        self.available_events : list[EventVisitorEntry] = list()
+
         if first_function:
             self.insert_configuration(first_function)
 

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from classes.data.abstract_computation import AbsComputation
 from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
@@ -28,6 +26,7 @@ class VisitorOutput:
         self.has_events: bool = False
         self.has_guards: bool = False
 
+
     def compute_results(self) -> bool:
         result = True
 
@@ -49,11 +48,8 @@ class VisitorOutput:
                 for h in abs_computation.liq_type_end[-1]:
                     result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
 
-        self.compute_qq()
         print("\tLiquidity Results:")
-        print("\t\tEfficient Algorithm:")
-        print(f"\t\t\tis {'' if self.efficient_algorithm_k_separate() else 'NOT '}k-separate liquid")
-        print(f"\t\t\tis {'' if self.efficient_algorithm_complete() else 'NOT '}liquid")
+        self.compute_qq()
         self.compute_reachable_states()
         self.compute_tqk()
         print("\t\tCostly Algorithm:")
@@ -62,8 +58,8 @@ class VisitorOutput:
 
         if not self.abs_computations_to_final_state:
             return False
-
         return result
+
 
     # Definition 1 : constraint 1
     def compute_function_local_liquidity(self) -> tuple[bool, bool, bool]:
@@ -79,8 +75,10 @@ class VisitorOutput:
     def set_init_state_id(self, state_id):
         self.Q0 = state_id
 
+
     def add_party(self, party_id):
         self.parties.append(party_id)
+
 
     def add_visitor_entry(self, visitor_entry: FunctionVisitorEntry | EventVisitorEntry, has_guard: bool = False):
         self.entries.add(visitor_entry)
@@ -89,8 +87,10 @@ class VisitorOutput:
         if has_guard:
             self.has_guards = True
 
+
     def add_global_asset(self, asset):
         self.global_assets.add(asset.text)
+
 
     def compute_r(self):
         # Base case
@@ -124,6 +124,7 @@ class VisitorOutput:
                 is_change = is_change or bool(set_tuples_to_add.difference(self.abs_computations[current_entry]))
                 self.abs_computations[current_entry].update(set_tuples_to_add)
 
+
     def compute_qq(self):
         for state in self.states:
             self.Qq[state] = set()
@@ -139,10 +140,12 @@ class VisitorOutput:
                 if len(self.Qq[entry.start_state]) > prev_len:
                     is_change = True
 
+
     def compute_reachable_states(self):
         self.reachable_states.add(self.Q0)
         for entry in self.Qq[self.Q0]:
             self.reachable_states.add(entry.end_state)
+
 
     # TODO modificare sta roba perché fa schifo
     #   modificare compute_R includendo anche le abs_comp che non partano da Q0, così qui fai un ciclo for in meno senza quel copy_abs_comp
@@ -153,6 +156,7 @@ class VisitorOutput:
             for abs_computation in self.abs_computations[entry]:
                 for configuration in abs_computation:
                     self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
+
 
     def compute_states(self):
         self.states = set()
@@ -196,6 +200,7 @@ class VisitorOutput:
         # step 2.1
         return True
 
+
     def efficient_algorithm_complete(self) -> bool:
         # step 1
         z : set[str] = set()
@@ -235,6 +240,7 @@ class VisitorOutput:
         # step 2.1
         return True
 
+
     def costly_algorithm_k_separate(self):
         for k in self.global_assets:
             z : set[str] = set()
@@ -260,6 +266,7 @@ class VisitorOutput:
                                 print(f"\t\t\t\tCOSTLY K-SEPARATE: {state}, {k}, {abs_computation}")
                                 return False
         return True
+
 
     def costly_algorithm_complete(self):
         z : set[tuple[str,frozenset[str]]] = set()
