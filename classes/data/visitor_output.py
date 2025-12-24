@@ -10,7 +10,8 @@ class VisitorOutput:
         self.Q0 : str = ''  # initial state
         self.parties: list[str] = list()
         self.global_assets: set[str] = set()
-        self.entries: set[FunctionVisitorEntry | EventVisitorEntry] = set() # set of all the clauses (Functions, Events) of the contract
+        self.functions: set[FunctionVisitorEntry] = set()
+        self.events: set[EventVisitorEntry] = set()
         self.abs_computations: dict[FunctionVisitorEntry | EventVisitorEntry, set[AbsComputation]] = dict()
         self.final_states: set[str] = set()
         self.reachable_states: set[str] = set()
@@ -31,11 +32,13 @@ class VisitorOutput:
         result = True
 
         print(f"\tFunction Liquidity Types:")
-        for entry in self.entries:
+        for entry in (self.functions | self.events):
             self.functions_liq_type[entry] = entry.get_env()
             print(f"\t\t{entry}")
             print(f"\t\t\t{self.functions_liq_type[entry]['start']} -> {self.functions_liq_type[entry]['end']}")
             print(f"\t\t\t{entry.asset_types}")
+            if isinstance(entry, FunctionVisitorEntry):
+                print(f"\t\t\t{entry.events_list}")
 
         print(f"\tAbstract Computations:")
         for fn in self.abs_computations:
@@ -63,12 +66,11 @@ class VisitorOutput:
 
     # Definition 1 : constraint 1
     def compute_function_local_liquidity(self) -> tuple[bool, bool, bool]:
-        for entry in self.entries:
-            if type(entry).__name__ == FunctionVisitorEntry.__name__:
-                p = entry.compute_local_liquidity()
-                if p:
-                    print(f"\t{entry}\n\t\tis NOT local liquid: {p}")
-                    return False, self.has_events, self.has_guards
+        for entry in self.functions:
+            par = entry.compute_local_liquidity()
+            if par:
+                print(f"\t{entry}\n\t\tis NOT local liquid: {par}")
+                return False, self.has_events, self.has_guards
         return True, self.has_events, self.has_guards
 
 
@@ -80,12 +82,14 @@ class VisitorOutput:
         self.parties.append(party_id)
 
 
-    def add_visitor_entry(self, visitor_entry: FunctionVisitorEntry | EventVisitorEntry, has_guard: bool = False):
-        self.entries.add(visitor_entry)
-        if type(visitor_entry).__name__ == EventVisitorEntry.__name__:
-            self.has_events = True
-        if has_guard:
-            self.has_guards = True
+    def add_visitor_function(self, visitor_entry: FunctionVisitorEntry, has_guard: bool = False):
+        self.functions.add(visitor_entry)
+        self.has_guards = self.has_guards | has_guard
+
+
+    def add_visitor_event(self, visitor_entry: EventVisitorEntry):
+        self.events.add(visitor_entry)
+        self.has_events = True
 
 
     def add_global_asset(self, asset):
@@ -98,18 +102,20 @@ class VisitorOutput:
         # Value for 'f':
             # [f] if f starts from Q0
             # [] else
-        for visitor_entry in self.entries:
-            if isinstance(visitor_entry, FunctionVisitorEntry) and visitor_entry.start_state == self.Q0:
-                self.abs_computations[visitor_entry] = { AbsComputation(visitor_entry) }
+        for function in self.functions:
+            if function.start_state == self.Q0:
+                self.abs_computations[function] = { AbsComputation(function) }
             else:
-                self.abs_computations[visitor_entry] = set()
+                self.abs_computations[function] = set()
+        for event in self.events:
+            self.abs_computations[event] = set()
 
         is_change = True
         while is_change:
             is_change = False
-            for current_entry in self.entries:
+            for current_entry in (self.functions | self.events):
                 set_tuples_to_add = set()
-                for previous_entry in self.entries:
+                for previous_entry in (self.functions | self.events):
                     # checks if previous_entry goes to current_function start state
                     if previous_entry.end_state == current_entry.start_state:
                         for previous_fn_abs_computation in self.abs_computations[previous_entry]:
@@ -128,12 +134,12 @@ class VisitorOutput:
     def compute_qq(self):
         for state in self.states:
             self.Qq[state] = set()
-        for entry in self.entries:
+        for entry in (self.functions | self.events):
             self.Qq[entry.start_state].add(entry)
         is_change = True
         while is_change:
             is_change = False
-            for entry in self.entries:
+            for entry in (self.functions | self.events):
                 prev_len = len(self.Qq[entry.start_state])
                 self.Qq[entry.start_state] |= self.Qq[entry.end_state]
                 self.Qq[entry.start_state].add(entry)
@@ -161,10 +167,10 @@ class VisitorOutput:
     def compute_states(self):
         self.states = set()
         initial_states = set()
-        for visitor_entry in self.entries:
-            self.states.add(visitor_entry.start_state)
-            self.states.add(visitor_entry.end_state)
-            initial_states.add(visitor_entry.start_state)
+        for entry in (self.functions | self.events):
+            self.states.add(entry.start_state)
+            self.states.add(entry.end_state)
+            initial_states.add(entry.start_state)
         self.final_states = self.states - initial_states
 
 

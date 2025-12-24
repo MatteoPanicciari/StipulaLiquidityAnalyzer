@@ -67,7 +67,7 @@ class Visitor(StipulaVisitor):
                                                       ctx.functionId.text, ctx.endStateId.text,
                                                       CodeReference(ctx.start.line, ctx.stop.line),
                                                       self.visitor_output.global_assets, list_of_local_assets, has_guard)
-        self.visitor_output.add_visitor_entry(function_visitor_entry, has_guard)   # update C and Lc on visitor_output
+        self.visitor_output.add_visitor_function(function_visitor_entry, has_guard)   # update C and Lc on visitor_output
 
         # visit function body
         for func_statement_ctx in ctx.functionBody().statement():
@@ -80,12 +80,13 @@ class Visitor(StipulaVisitor):
             else:
                 print("ERROR visitFunctionDecl")
         for func_event_ctx in ctx.functionBody().eventDecl():
-            self.visitEventDecl(func_event_ctx)
+            function_visitor_entry.add_event(self.visitEventDecl(func_event_ctx))
 
-    def visitEventDecl(self, ctx:StipulaParser.EventDeclContext):
+    def visitEventDecl(self, ctx:StipulaParser.EventDeclContext) -> EventVisitorEntry:
         event_visitor_entry = EventVisitorEntry(ctx.trigger.getText(), ctx.startStateId.text, ctx.endStateId.text,
                                                 CodeReference(ctx.start.line, ctx.stop.line), self.visitor_output.global_assets)
-        self.visitor_output.add_visitor_entry(event_visitor_entry)
+        self.visitor_output.add_visitor_event(event_visitor_entry)
+        return event_visitor_entry
 
     def visitIfThenElse(self, ctx: StipulaParser.IfThenElseContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiqExpr]:
         if ctx.expression():

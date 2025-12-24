@@ -60,6 +60,16 @@ class VisitorEntry:
             entry_type_result['end'][el] = entry_type['end'][el].copy_liquidity()
         return entry_type_result
 
+
+class EventVisitorEntry(VisitorEntry):
+    def __init__(self, trigger, start_state, end_state, code_reference, global_assets):
+        super().__init__(start_state, end_state, code_reference, global_assets)
+        self.trigger = trigger
+
+    def __str__(self):
+        return f"{self.start_state} ev_{self.trigger} {self.end_state}"
+    __repr__ = __str__
+
 class FunctionVisitorEntry(VisitorEntry):
     def __init__(self, start_state, handler, code_id, end_state, code_reference, global_assets, local_assets, has_guard):
         super().__init__(start_state, end_state, code_reference, global_assets)
@@ -68,6 +78,8 @@ class FunctionVisitorEntry(VisitorEntry):
 
         self.local_assets = local_assets
         self.has_guard = has_guard
+
+        self.events_list : list[EventVisitorEntry] = []
 
         for p in local_assets:
             self.input_type[p] = LiqExpr(LiqConst.FULL)
@@ -86,11 +98,5 @@ class FunctionVisitorEntry(VisitorEntry):
         return f"{self.start_state} {self.handler}:{self.code_id} {self.end_state}"
     __repr__ = __str__
 
-class EventVisitorEntry(VisitorEntry):
-    def __init__(self, trigger, start_state, end_state, code_reference, global_assets):
-        super().__init__(start_state, end_state, code_reference, global_assets)
-        self.trigger = trigger
-
-    def __str__(self):
-        return f"{self.start_state} ev_{self.trigger} {self.end_state}"
-    __repr__ = __str__
+    def add_event(self, event: EventVisitorEntry):
+        self.events_list.append(event)
