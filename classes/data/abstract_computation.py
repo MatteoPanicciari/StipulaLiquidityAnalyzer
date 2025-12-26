@@ -70,6 +70,13 @@ class AbsComputation:
     def get_env(self) -> dict[str, dict[str,LiqExpr]]:
         return {'start': self.liq_type_begin[0], 'end': self.liq_type_end[-1]}
 
+    def add_available_event(self, event):
+        self.available_events.append(event)
+
+    def remove_available_event(self, event):
+        if event in self.available_events:
+            self.available_events.remove(event)
+
     def __str__(self):
         result = ''
         for configuration in self.configurations:
@@ -90,10 +97,12 @@ class AbsComputation:
             for configuration in self.configurations:
                 result.insert_configuration(configuration)
             self.is_first_function_missing = len(self.configurations) == 0
+        result.available_events = list(self.available_events)
         return result
 
     def __eq__(self, other):
         if isinstance(other, AbsComputation):
+            # return self.configurations == other.configurations and self.available_events == other.available_events
             return self.configurations == other.configurations
         return False
 

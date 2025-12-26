@@ -67,7 +67,7 @@ class EventVisitorEntry(VisitorEntry):
         self.trigger = trigger
 
     def __str__(self):
-        return f"{self.start_state} ev_{self.trigger} {self.end_state}"
+        return f"{self.start_state} {self.trigger} {self.end_state}"
     __repr__ = __str__
 
 class FunctionVisitorEntry(VisitorEntry):

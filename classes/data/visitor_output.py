@@ -12,7 +12,7 @@ class VisitorOutput:
         self.global_assets: set[str] = set()
         self.functions: set[FunctionVisitorEntry] = set()
         self.events: set[EventVisitorEntry] = set()
-        self.abs_computations: dict[FunctionVisitorEntry | EventVisitorEntry, set[AbsComputation]] = dict()
+        self.abs_computations: set[AbsComputation] = set()
         self.final_states: set[str] = set()
         self.reachable_states: set[str] = set()
 
@@ -22,7 +22,6 @@ class VisitorOutput:
 
         self.abs_computations_to_final_state : set[AbsComputation] = set()
         self.functions_liq_type : dict[FunctionVisitorEntry | EventVisitorEntry, dict[str, dict[str, LiqExpr]]] = dict()
-        self.abs_computations_liq_type : dict[AbsComputation, tuple[str, dict[str, LiqExpr]]] = dict()
 
         self.has_events: bool = False
         self.has_guards: bool = False
@@ -41,15 +40,14 @@ class VisitorOutput:
                 print(f"\t\t\t{entry.events_list}")
 
         print(f"\tAbstract Computations:")
-        for fn in self.abs_computations:
-            for abs_computation in self.abs_computations[fn]:
-                abs_comp_env = abs_computation.get_env()
-                self.abs_computations_to_final_state.add(abs_computation)
-                print(f"\t\t{abs_computation}")
-                print(f"\t\t\t{abs_comp_env['start']} -> {abs_comp_env['end']}")
-                print(f"\t\t\t{abs_computation.asset_types}")
-                for h in abs_computation.liq_type_end[-1]:
-                    result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
+        for abs_computation in self.abs_computations:
+            abs_comp_env = abs_computation.get_env()
+            self.abs_computations_to_final_state.add(abs_computation)
+            print(f"\t\t{abs_computation}")
+            print(f"\t\t\t{abs_comp_env['start']} -> {abs_comp_env['end']}")
+            print(f"\t\t\t{abs_computation.asset_types}")
+            for h in abs_computation.liq_type_end[-1]:
+                result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
 
         print("\tLiquidity Results:")
         self.compute_qq()
@@ -104,32 +102,33 @@ class VisitorOutput:
             # [] else
         for function in self.functions:
             if function.start_state == self.Q0:
-                self.abs_computations[function] = { AbsComputation(function) }
-            else:
-                self.abs_computations[function] = set()
-        for event in self.events:
-            self.abs_computations[event] = set()
+                abs_computation = AbsComputation(function)
+                for event in function.events_list:
+                    abs_computation.add_available_event(event)
+                self.abs_computations.add(abs_computation)
 
         is_change = True
         while is_change:
             is_change = False
-            for current_entry in (self.functions | self.events):
-                set_tuples_to_add = set()
-                for previous_entry in (self.functions | self.events):
-                    # checks if previous_entry goes to current_function start state
-                    if previous_entry.end_state == current_entry.start_state:
-                        for previous_fn_abs_computation in self.abs_computations[previous_entry]:
-                            # foreach tuple in previous_entry.set:
-                            #   checks if the current entry appears less than k times in the tuple
-                            #   if True, add the entry to the tuple
-                            new_previous_entry_tuple = previous_fn_abs_computation.copy_abs_computation()
-                            if previous_fn_abs_computation.count(current_entry) < K:
-                                new_previous_entry_tuple.insert_configuration(current_entry)
-                            set_tuples_to_add.add(new_previous_entry_tuple)
+            computations_to_add : set[AbsComputation] = set()
+            for abs_computation in self.abs_computations:
+                for function in self.functions:
+                    if function.start_state == abs_computation.get_last_state():
+                        new_abs_computation = abs_computation.copy_abs_computation()
+                        if abs_computation.count(function) < K:
+                            new_abs_computation.insert_configuration(function)
+                        for event in function.events_list:
+                            new_abs_computation.add_available_event(event)
+                        computations_to_add.add(new_abs_computation)
+                for event in abs_computation.available_events:
+                    if event.start_state == abs_computation.get_last_state():
+                        new_abs_computation = abs_computation.copy_abs_computation()
+                        new_abs_computation.insert_configuration(event)
+                        new_abs_computation.remove_available_event(event)
+                        computations_to_add.add(new_abs_computation)
 
-                is_change = is_change or bool(set_tuples_to_add.difference(self.abs_computations[current_entry]))
-                self.abs_computations[current_entry].update(set_tuples_to_add)
-
+            is_change = is_change or bool(computations_to_add.difference(self.abs_computations))
+            self.abs_computations.update(computations_to_add)
 
     def compute_qq(self):
         for state in self.states:
@@ -158,10 +157,9 @@ class VisitorOutput:
     def compute_tqk(self):
         for state in self.states:
             self.Tqk[state] = set()
-        for entry in self.abs_computations:
-            for abs_computation in self.abs_computations[entry]:
-                for configuration in abs_computation:
-                    self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
+        for abs_computation in self.abs_computations:
+            for configuration in abs_computation:
+                self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
 
 
     def compute_states(self):

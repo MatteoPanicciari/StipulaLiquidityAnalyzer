@@ -1,0 +1,43 @@
+/*
+Contract to test Abstract Computations generation
+
+expected result:
+    Init A:f Cont;
+    Init A:f Cont; Cont A:i Run;
+    Init A:f Cont; Cont A:i Run; Run now End;
+    Init A:g Cont;
+    Init A:g Cont; Cont A:i Run;
+    Init A:g Cont; Cont now+1 Run;
+    Init A:h Cont;
+    Init A:h Cont; Cont A:i Run;
+    Init A:h Cont; Cont A:i Run; Run now+3 Run;
+    Init A:h Cont; Cont A:i Run; Run now+4 End;
+    Init A:h Cont; Cont A:i Run; Run now+3 Run; Run now+4 End;
+*/
+
+stipula Wrong {
+	fields x
+	agreement(A){
+		A: x
+	} => @Init
+
+	@Init A:f()[] {
+		now >> @Run {} => @End
+		now + 2 >> @Unreachable {} => @End
+	} => @Cont
+			
+	@Init A:g()[] {
+		now + 1 >> @Cont {} => @Run
+	} => @Cont
+
+	@Init A:h()[] {
+		now + 3 >> @Run {} => @Run
+		now + 4 >> @Run {} => @End
+	} => @Cont
+
+	@Cont A:i()[] {
+	} => @Run
+
+	@Unreachable A:l()[] {
+	} => @Run
+}
