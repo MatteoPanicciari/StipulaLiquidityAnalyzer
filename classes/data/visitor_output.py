@@ -21,33 +21,36 @@ class VisitorOutput:
         self.Qq : dict[str, set[FunctionVisitorEntry | EventVisitorEntry]] = dict()
 
         self.abs_computations_to_final_state : set[AbsComputation] = set()
-        self.functions_liq_type : dict[FunctionVisitorEntry | EventVisitorEntry, dict[str, dict[str, LiqExpr]]] = dict()
 
         self.has_events: bool = False
         self.has_guards: bool = False
 
 
-    def compute_results(self) -> bool:
-        result = True
-
+    def compute_results_verbose(self) -> bool:
         print(f"\tFunction Liquidity Types:")
         for entry in (self.functions | self.events):
-            self.functions_liq_type[entry] = entry.get_env()
+            entry_env = entry.get_env()
             print(f"\t\t{entry}")
-            print(f"\t\t\t{self.functions_liq_type[entry]['start']} -> {self.functions_liq_type[entry]['end']}")
-            print(f"\t\t\t{entry.asset_types}")
+            print(f"\t\t\tLIQUIDITY TYPE:")
+            print(f"\t\t\t\t{entry_env['start']} -> {entry_env['end']}")
+            print(f"\t\t\tASSET TYPES:")
+            print(f"\t\t\t\t{entry.asset_types}")
             if isinstance(entry, FunctionVisitorEntry):
-                print(f"\t\t\t{entry.events_list}")
+                print(f"\t\t\tEVENTS LIST:")
+                print(f"\t\t\t\t{entry.events_list}")
 
         print(f"\tAbstract Computations:")
         for abs_computation in self.abs_computations:
             abs_comp_env = abs_computation.get_env()
-            self.abs_computations_to_final_state.add(abs_computation)
             print(f"\t\t{abs_computation}")
-            print(f"\t\t\t{abs_comp_env['start']} -> {abs_comp_env['end']}")
-            print(f"\t\t\t{abs_computation.asset_types}")
-            for h in abs_computation.liq_type_end[-1]:
-                result = result and abs_computation.liq_type_end[-1][h] == LiqExpr(LiqConst.EMPTY)
+            print(f"\t\t\tLIQUIDITY TYPE:")
+            print(f"\t\t\t\t{abs_comp_env['start']} -> {abs_comp_env['end']}")
+            print(f"\t\t\tASSET TYPES:")
+            print(f"\t\t\t\t{abs_computation.asset_types}")
+            print(f"\t\t\tARE ALL ALL SINGLETON:")
+            print(f"\t\t\t\t{abs_computation.are_all_types_singleton}")
+
+        return self.compute_results()
 
         print("\tLiquidity Results:")
         self.compute_qq()

@@ -6,7 +6,7 @@ from generated.StipulaParser import StipulaParser
 
 from classes.visitor import Visitor
 
-def _main(file_path):
+def _main(file_path, is_verbose=True):
     input_stream = antlr4.FileStream(file_path)
     lexer = StipulaLexer(input_stream)
     stream = antlr4.CommonTokenStream(lexer)
@@ -16,13 +16,13 @@ def _main(file_path):
     if parser.getNumberOfSyntaxErrors() > 0:
         print('Syntax errors')
         sys.exit(1)
-    Visitor().visit(tree)
+    Visitor(is_verbose).visit(tree)
 
 if __name__ == '__main__':
     #_main('./TESTS/Ugly.stipula')
     _main('./TESTS/Fill_Move.stipula')
-    #_main('./TESTS/Non_Liquid_Fill_Move.stipula')
-    _main('TESTS/AbsCompTest.stipula')
+    _main('./TESTS/Non_Liquid_Fill_Move.stipula')
+    #_main('TESTS/AbsCompTest.stipula')
     #_main('./TESTS/Ping_Pong.stipula')
     #_main('./TESTS/Bet.stipula')
     #_main('./TESTS/Linear_Automaton.stipula')

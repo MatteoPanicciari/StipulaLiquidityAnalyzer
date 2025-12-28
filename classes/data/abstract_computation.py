@@ -20,6 +20,8 @@ class AbsComputation:
 
         self.available_events : list[EventVisitorEntry] = list()
 
+        self.are_all_types_singleton = True
+
         if first_function:
             self.insert_configuration(first_function)
 
@@ -46,6 +48,7 @@ class AbsComputation:
             for (a,b) in itertools.combinations(g, 2):
                 if a in entry.global_assets and b in entry.global_assets:
                     self.asset_types.merge_types(a,b)
+                    self.are_all_types_singleton = False
 
         self.liq_type_end.append(entry_env['end'])
         for h in self.liq_type_end[-1]:

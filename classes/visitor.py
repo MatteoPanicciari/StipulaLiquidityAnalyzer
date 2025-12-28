@@ -6,8 +6,9 @@ from classes.data.liquidity_expression import LiqExpr, LiqConst
 from classes.data.visitor_output import VisitorOutput
 
 class Visitor(StipulaVisitor):
-    def __init__(self):
+    def __init__(self, is_verbose):
         StipulaVisitor.__init__(self)
+        self.is_verbose = is_verbose
         self.visitor_output = VisitorOutput()
 
     def visitStipula(self, ctx: StipulaParser.StipulaContext):
@@ -26,18 +27,19 @@ class Visitor(StipulaVisitor):
               "\n|=========================================|"
               "\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯"
               f"\n{ctx.ID()}")
-        result = self.visitor_output.compute_function_local_liquidity()
-        if result[0]:
+        result_compute_function = self.visitor_output.compute_function_local_liquidity()
+        if result_compute_function[0]:
             self.visitor_output.compute_states()
             self.visitor_output.compute_r()
-            if self.visitor_output.compute_results():
+            result_liquidity = self.visitor_output.compute_results_verbose() if self.is_verbose else self.visitor_output.compute_results()
+            if result_liquidity:
                 print(f"\n{ctx.ID()} is liquid")
             else:
                 print(f"\n{ctx.ID()} is NOT liquid")
         else:
             print(f"\n{ctx.ID()} is NOT liquid")
-        print(f"has events: {result[1]}")
-        print(f"has guards: {result[2]}")
+        print(f"has events: {result_compute_function[1]}")
+        print(f"has guards: {result_compute_function[2]}")
 
     def visitAssetsDecl(self, ctx:StipulaParser.AssetsDeclContext):
         """
