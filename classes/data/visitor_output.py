@@ -52,17 +52,19 @@ class VisitorOutput:
 
         return self.compute_results()
 
-        print("\tLiquidity Results:")
+
+    def compute_results(self) -> bool:
         self.compute_qq()
         self.compute_reachable_states()
         self.compute_tqk()
-        print("\t\tCostly Algorithm:")
-        print(f"\t\t\tis {'' if self.costly_algorithm_k_separate() else 'NOT '}k-separate liquid")
-        print(f"\t\t\tis {'' if self.costly_algorithm_complete() else 'NOT '}liquid")
-
-        if not self.abs_computations_to_final_state:
-            return False
-        return result
+        are_all_types_singleton = all(
+            abs_computation.are_all_types_singleton
+            for abs_computation in self.abs_computations
+        )
+        if are_all_types_singleton:
+            return self.costly_algorithm_k_separate()
+        else:
+            return self.costly_algorithm_complete()
 
 
     # Definition 1 : constraint 1
