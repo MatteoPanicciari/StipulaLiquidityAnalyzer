@@ -27,7 +27,11 @@ if __name__ == '__main__':
     #_main('./TESTS/Bet.stipula')
     #_main('./TESTS/Linear_Automaton.stipula')
 
-# commentare
-# togliere (?) i visitExpression dato che non devo assicurarmi dei tipi o degli id
-# capire se va bene usare il complete algorithm se anche una sola abs_comp in un contratto ha i tipi di asset che non sono singoletti
-# mettere il mio codice nel progetto di erik
+# TODO
+#   commentare
+#   togliere(?) i visitExpression dato che non devo assicurarmi dei tipi o degli id
+#   capire se va bene usare il complete algorithm se anche una sola abs_comp in un contratto ha i tipi di asset che non sono singoletti
+#   mettere il mio codice nel progetto di erik
+#   capire se gli algoritmi di tqk e liquidity sono effettivamente come devono essere per costo computazionale
+#   testare all'infinito
+#   gestire meglio gli errori (es: chiamo il get_field_value con un field inesistente, lo devo gestire io?
