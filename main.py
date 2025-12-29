@@ -6,7 +6,7 @@ from generated.StipulaParser import StipulaParser
 
 from classes.liquidity_visitor import LiquidityVisitor
 
-def _main(file_path: str, is_verbose: bool=True):
+def _main(file_path: str, is_verbose: bool=False):
     input_stream = antlr4.FileStream(file_path)
     lexer = StipulaLexer(input_stream)
     stream = antlr4.CommonTokenStream(lexer)
@@ -29,6 +29,7 @@ if __name__ == '__main__':
 
 # TODO
 #   commentare
+#   esecuzione da riga di comando con 'click'
 #   togliere(?) i visitExpression dato che non devo assicurarmi dei tipi o degli id
 #   capire se va bene usare il complete algorithm se anche una sola abs_comp in un contratto ha i tipi di asset che non sono singoletti
 #   mettere il mio codice nel progetto di erik
