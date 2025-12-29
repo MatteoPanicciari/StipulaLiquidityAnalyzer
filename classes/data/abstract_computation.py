@@ -7,26 +7,35 @@ from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 
 class AbsComputation:
-    def __init__(self, first_function: FunctionVisitorEntry | EventVisitorEntry = None):
+    def __init__(self):
         self.is_first_function_missing = True
 
+        # list of entry in the computation
         self.configurations : tuple[FunctionVisitorEntry | EventVisitorEntry] = tuple()
 
+        # liquidity type of the abstract computation
         self.liq_type_begin : list[dict[str, LiqExpr]] = list()
         self.liq_type_end : list[dict[str, LiqExpr]] = list()
 
         self.asset_types : AssetTypes = AssetTypes()
+
+        # True if asset_types is composed only by singletons
         self.are_all_types_singleton = True
 
+        # events table - list of callable events for this abs_comp
         self.available_events : list[EventVisitorEntry] = list()
 
-        if first_function:
-            self.insert_configuration(first_function)
 
-    def insert_configuration(self, entry: FunctionVisitorEntry | EventVisitorEntry):
+    def insert_configuration(self, entry: FunctionVisitorEntry | EventVisitorEntry) -> None:
+        """
+            Insert a liquidity entry at the end of the abs_computation
+
+        :param entry: function or event to add
+        """
         self.configurations += (entry,)
 
         # Compute: Liquidity type of abstract computation (Def 3)
+        # Def 3 - begin
         entry_env = entry.copy_global_env()
         if self.is_first_function_missing:
             self.is_first_function_missing = False
@@ -41,13 +50,7 @@ class AbsComputation:
                     h_value = self.liq_type_end[-1][h].copy_liquidity()
                     self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), h_value)
                     self.liq_type_begin[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_begin[-1][h])
-
-        for g in entry.get_asset_types():
-            for (a,b) in itertools.combinations(g, 2):
-                if a in entry.get_global_assets() and b in entry.get_global_assets():
-                    self.asset_types.merge_types(a,b)
-                    self.are_all_types_singleton = False
-
+        # Def 3 - end
         self.liq_type_end.append(entry_env['end'])
         for h in self.liq_type_end[-1]:
             if h in entry.get_global_assets() and str(self.liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
@@ -55,15 +58,24 @@ class AbsComputation:
                 self.liq_type_end[-1][h].replace_value(str(self.liq_type_end[-1][h]), h_value)
                 self.liq_type_end[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_end[-1][h])
 
-    def count(self, entry: FunctionVisitorEntry | EventVisitorEntry):
+        # Merges the abs_computation asset_types according to the asset_types sets contained in the entry.
+        # If the asset types A and B are merged in the entry, the groups already formed in abs_computation
+        # that contain A and B will also be merged.
+        for g in entry.get_asset_types():
+            for (a,b) in itertools.combinations(g, 2):
+                if a in entry.get_global_assets() and b in entry.get_global_assets():
+                    self.asset_types.merge_types(a,b)
+                    self.are_all_types_singleton = False
+
+
+    def count(self, entry: FunctionVisitorEntry | EventVisitorEntry) -> int:
+        """
+        :param entry: entry to count
+        :return: number of times entry appears in the computation
+        """
         return Counter(self.configurations)[entry]
 
-    # unused
-    def get_first_state(self) -> str:
-        if self.configurations:
-            return self.configurations[0].get_start_state()
-        return ''
-
+    # region getter, setter
     def get_last_state(self) -> str:
         if self.configurations:
             return self.configurations[-1].get_end_state()
@@ -87,7 +99,9 @@ class AbsComputation:
     def remove_available_event(self, event):
         if event in self.available_events:
             self.available_events.remove(event)
+    # endregion getter, setter
 
+    # region magic methods, deep_copy
     def __str__(self):
         result = ''
         for configuration in self.configurations:
@@ -96,6 +110,13 @@ class AbsComputation:
     __repr__ = __str__
 
     def copy_abs_computation(self, initial_state: str = '') -> AbsComputation:
+        # TODO: possibile problema con comp in cui passo piu volte nello stesso stato, se voglio copiare la comp
+        #  dalla seconda volta che son passato in quello ststo, ricverò sempre la prima ig
+        """
+        :param initial_state: The computation copied will start from the initial_state (if it occurs in the computation).
+            If empty, the copied computation will be exactly the same
+        :return: deep-copy of the abs_computation
+        """
         result = AbsComputation()
         if initial_state:
             append = False
@@ -131,3 +152,4 @@ class AbsComputation:
 
     def __iter__(self):
         return iter(self.configurations)
+    # endregion magic methods, deep_copy

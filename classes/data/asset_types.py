@@ -37,6 +37,7 @@ class AssetTypes:
         self.type_groups.add(merged)
         return True
 
+    # region magic methods
     def __iter__(self):
         return iter(self.type_groups)
 
@@ -49,3 +50,4 @@ class AssetTypes:
             result = result[:-2] + '); '
         return result[:-2]
     __repr__ = __str__
+    # endregion magic methods

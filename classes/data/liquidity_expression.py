@@ -79,6 +79,7 @@ class LiqExpr:
         print("ERROR resolve_partial_evaluation")
         return e
 
+    # region magic methods, deepcopy
     def __str__(self):
         if self.left is None or self.right is None:
             return self.value
@@ -92,4 +93,8 @@ class LiqExpr:
         return False
 
     def copy_liquidity(self) -> LiqExpr:
+        """
+        :return: deep-copy of the LiqExpr
+        """
         return LiqExpr(self.value, self.left, self.right)
+    # endregion magic methods, deepcopy
