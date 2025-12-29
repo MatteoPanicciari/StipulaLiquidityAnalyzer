@@ -3,13 +3,13 @@ from generated.StipulaParser import StipulaParser
 
 from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
-from classes.data.visitor_output import VisitorOutput
+from classes.liquidity_computer import LiquidityComputer
 
-class Visitor(StipulaVisitor):
+class LiquidityVisitor(StipulaVisitor):
     def __init__(self, is_verbose):
         StipulaVisitor.__init__(self)
         self.is_verbose = is_verbose
-        self.visitor_output = VisitorOutput()
+        self.visitor_output = LiquidityComputer()
 
         self.parties : list[str] = list()
 
@@ -31,8 +31,7 @@ class Visitor(StipulaVisitor):
               f"\n{ctx.ID()}")
         are_functions_liquid = self.visitor_output.compute_function_local_liquidity()
         if are_functions_liquid:
-            self.visitor_output.compute_states()
-            self.visitor_output.compute_r()
+            self.visitor_output.compute_abs_computations()
             result_liquidity = self.visitor_output.compute_results_verbose() if self.is_verbose else self.visitor_output.compute_results()
             print(f"\n{ctx.ID()} is{'' if result_liquidity[0] else ' NOT'} liquid")
             print(f"has events: {result_liquidity[1]}")
@@ -60,9 +59,9 @@ class Visitor(StipulaVisitor):
     def visitFunctionDecl(self, ctx:StipulaParser.FunctionDeclContext):
         """
         Visit function declaration
-        i.e. FunctionVisitorEntry call : (start_state=Q0, handler=Alice, code_id=fill, end_state=Q1, code_reference=(9, 11))
+        i.e. : @Q0 A.f (x)[k](e==e1) { k -o A } => Q1
         """
-        list_of_local_assets = [a.text for a in ctx.assetId]
+        list_of_local_assets = {a.text for a in ctx.assetId}
         has_guard = bool(ctx.precondition)
         function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text,
                                                       ctx.functionId.text, ctx.endStateId.text,
@@ -83,6 +82,10 @@ class Visitor(StipulaVisitor):
             function_visitor_entry.add_event(self.visitEventDecl(func_event_ctx))
 
     def visitEventDecl(self, ctx:StipulaParser.EventDeclContext) -> EventVisitorEntry:
+        """
+        Visit event declaration
+        i.e. : now >> @Q0 { h -o A } => @Q1
+        """
         event_visitor_entry = EventVisitorEntry(ctx.trigger.getText(), ctx.startStateId.text, ctx.endStateId.text, self.visitor_output.get_global_asset())
         self.visitor_output.add_visitor_event(event_visitor_entry)
         return event_visitor_entry
@@ -141,7 +144,7 @@ class Visitor(StipulaVisitor):
                         destination_value = function_visitor_entry.get_current_field_value(destination_id)
                         left_value = function_visitor_entry.get_current_field_value(left_id)
                         destination_value.add_operation(LiqConst.UPPER, left_value)
-                        function_visitor_entry.get_asset_types().merge_types(left_id, right_id)
+                        function_visitor_entry.merge_function_asset_types(left_id, right_id)
             else:
                 # left -o destination
                 destination_id = ctx.ID(0).getText()
@@ -157,7 +160,7 @@ class Visitor(StipulaVisitor):
                     # [L-AUPDATE] [L-ASEND]
                     function_visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.EMPTY))
                     if destination_id not in self.parties:
-                        function_visitor_entry.get_asset_types().merge_types(left_id, destination_id)
+                        function_visitor_entry.merge_function_asset_types(left_id, destination_id)
                 else:
                     # left is a value
                     # TODO ?

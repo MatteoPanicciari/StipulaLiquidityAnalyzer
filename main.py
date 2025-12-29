@@ -6,7 +6,7 @@ from generated.StipulaParser import StipulaParser
 
 from classes.liquidity_visitor import LiquidityVisitor
 
-def _main(file_path, is_verbose=True):
+def _main(file_path: str, is_verbose: bool=True):
     input_stream = antlr4.FileStream(file_path)
     lexer = StipulaLexer(input_stream)
     stream = antlr4.CommonTokenStream(lexer)

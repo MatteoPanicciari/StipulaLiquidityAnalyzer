@@ -5,7 +5,7 @@ from classes.data.liquidity_expression import LiqExpr, LiqConst
 # maximum number of times a function can appear in the same abstract computation (k-canonical)
 K: int = 1
 
-class VisitorOutput:
+class LiquidityComputer:
     def __init__(self):
         self.Q0 : str = ''  # initial state
         self.global_assets: set[str] = set()
@@ -23,7 +23,7 @@ class VisitorOutput:
         self.has_events: bool = False
         self.has_guards: bool = False
 
-
+    # region compute results
     def compute_results_verbose(self) -> tuple[bool, bool, bool]:
         print(f"\tFunction Liquidity Types:")
         for entry in (self.functions | self.events):
@@ -47,12 +47,9 @@ class VisitorOutput:
             print(f"\t\t\t\t{abs_computation.get_asset_types()}")
             print(f"\t\t\tARE ALL ASSET TYPES SINGLETON:")
             print(f"\t\t\t\t{abs_computation.get_are_all_types_singleton()}")
-
         return self.compute_results()
 
-
     def compute_results(self) -> tuple[bool, bool, bool]:
-        self.compute_qq()
         self.compute_reachable_states()
         self.compute_tqk()
         are_all_types_singleton = all(
@@ -63,32 +60,19 @@ class VisitorOutput:
             return self.costly_algorithm_k_separate(), self.has_events, self.has_guards
         else:
             return self.costly_algorithm_complete(), self.has_events, self.has_guards
+    # endregion compute results
 
-
-    # Definition 1 : constraint 1
-    def compute_function_local_liquidity(self) -> bool :
-        for entry in self.functions:
-            par = entry.compute_local_liquidity()
-            if par:
-                print(f"\t{entry}\n\t\tis NOT local liquid: {par}")
-                return False
-        return True
-
-
-    # region setter
+    # region getter, setter
     def set_init_state_id(self, state_id):
         self.Q0 = state_id
-
 
     def add_visitor_function(self, visitor_entry: FunctionVisitorEntry, has_guard: bool = False):
         self.functions.add(visitor_entry)
         self.has_guards = self.has_guards | has_guard
 
-
     def add_visitor_event(self, visitor_entry: EventVisitorEntry):
         self.events.add(visitor_entry)
         self.has_events = True
-
 
     def add_global_asset(self, asset):
         self.global_assets.add(asset.text)
@@ -97,16 +81,39 @@ class VisitorOutput:
          return self.global_assets
     # endregion setter
 
+    def compute_function_local_liquidity(self) -> bool:
+        """
+            Compute local liquidity for each function.
+            Checks if all the local assets are emptied to respond to Definition 1 - Constraint 1
 
-    def compute_r(self):
-        # Base case
-        # Initialize the dict foreach function
-        # Value for 'f':
-            # [f] if f starts from Q0
-            # [] else
+            :return: True if all the functions are liquid, otherwise False
+        """
+        for entry in self.functions:
+            par = entry.compute_local_liquidity()
+            if par:
+                print(f"\t{entry}\n\t\tis NOT local liquid: {par}")
+                return False
+        return True
+
+    def compute_abs_computations(self) -> None:
+        """
+        Compute states and abstract computations starting from Q0
+        """
+        self.states = set()
+        for event in self.events:
+            # fill states set
+            self.states.add(event.start_state)
+            self.states.add(event.end_state)
+
         for function in self.functions:
+            # fill states set
+            self.states.add(function.start_state)
+            self.states.add(function.end_state)
+
             if function.start_state == self.Q0:
-                abs_computation = AbsComputation(function)
+                # create an abs_computation formed only by the function if function starts in Q0
+                abs_computation = AbsComputation()
+                abs_computation.insert_configuration(function)
                 for event in function.events_list:
                     abs_computation.add_available_event(event)
                 self.abs_computations.add(abs_computation)
@@ -121,19 +128,49 @@ class VisitorOutput:
                         new_abs_computation = abs_computation.copy_abs_computation()
                         if abs_computation.count(function) < K:
                             new_abs_computation.insert_configuration(function)
-                        for event in function.events_list:
-                            new_abs_computation.add_available_event(event)
+                            for event in function.events_list:
+                                new_abs_computation.add_available_event(event)
                         computations_to_add.add(new_abs_computation)
                 for event in abs_computation.get_available_events():
                     if event.start_state == abs_computation.get_last_state():
                         new_abs_computation = abs_computation.copy_abs_computation()
-                        new_abs_computation.insert_configuration(event)
                         new_abs_computation.remove_available_event(event)
+                        new_abs_computation.insert_configuration(event)
                         computations_to_add.add(new_abs_computation)
 
             is_change = is_change or bool(computations_to_add.difference(self.abs_computations))
             self.abs_computations.update(computations_to_add)
 
+    def compute_reachable_states(self) -> None:
+        """
+        Computes the set of states reachable from the initial state Q0 and saves them in self.reachable_states.
+
+        The method performs a depth-first search (DFS) over the automaton
+        transitions, treating states as nodes and transitions as directed edges.
+        Only reachability is considered; transition labels are ignored.
+        """
+        visited = { self.Q0 }
+        stack = [ self.Q0 ]
+
+        while stack:
+            q = stack.pop()
+            for entry in (self.functions | self.events):
+                if entry.start_state == q:
+                    q_next = entry.end_state
+                    if q_next not in visited:
+                        visited.add(q_next)
+                        stack.append(q_next)
+
+        self.reachable_states = visited
+
+    def compute_tqk(self) -> None:
+        for state in self.states:
+            self.Tqk[state] = set()
+        for abs_computation in self.abs_computations:
+            for configuration in abs_computation:
+                self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
+
+    # region efficient algorithm (unused)
     def compute_qq(self):
         for state in self.states:
             self.Qq[state] = set()
@@ -149,31 +186,6 @@ class VisitorOutput:
                 if len(self.Qq[entry.start_state]) > prev_len:
                     is_change = True
 
-
-    def compute_reachable_states(self):
-        self.reachable_states.add(self.Q0)
-        for entry in self.Qq[self.Q0]:
-            self.reachable_states.add(entry.end_state)
-
-
-    def compute_tqk(self):
-        for state in self.states:
-            self.Tqk[state] = set()
-        for abs_computation in self.abs_computations:
-            for configuration in abs_computation:
-                self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
-
-
-    def compute_states(self):
-        self.states = set()
-        initial_states = set()
-        for entry in (self.functions | self.events):
-            self.states.add(entry.start_state)
-            self.states.add(entry.end_state)
-            initial_states.add(entry.start_state)
-
-
-    # region efficient algorithm (unused)
     def efficient_algorithm_k_separate(self) -> bool:
         # step 1
         self.compute_qq()
@@ -205,7 +217,6 @@ class VisitorOutput:
                             return False
         # step 2.1
         return True
-
 
     def efficient_algorithm_complete(self) -> bool:
         # step 1
@@ -283,7 +294,7 @@ class VisitorOutput:
                 kbar = set()
                 for k in self.global_assets:
                     if (abs_computation_env['end'][k] != LiqExpr(LiqConst.EMPTY)
-                        and abs_computation_env['end'][k] != abs_computation_env['start'][k]
+                        and abs_computation_env['start'][k] != abs_computation_env['end'][k]
                         and (abs_computation.get_last_state(), frozenset({k})) not in z):
                         kbar.add(k)
                 if kbar:
