@@ -4,9 +4,9 @@ import antlr4
 from generated.StipulaLexer import StipulaLexer
 from generated.StipulaParser import StipulaParser
 
-from classes.visitor import Visitor
+from classes.liquidity_visitor import LiquidityVisitor
 
-def _main(file_path, is_verbose=False):
+def _main(file_path, is_verbose=True):
     input_stream = antlr4.FileStream(file_path)
     lexer = StipulaLexer(input_stream)
     stream = antlr4.CommonTokenStream(lexer)
@@ -16,7 +16,7 @@ def _main(file_path, is_verbose=False):
     if parser.getNumberOfSyntaxErrors() > 0:
         print('Syntax errors')
         sys.exit(1)
-    Visitor(is_verbose).visit(tree)
+    LiquidityVisitor(is_verbose).visit(tree)
 
 if __name__ == '__main__':
     #_main('./TESTS/Ugly.stipula')

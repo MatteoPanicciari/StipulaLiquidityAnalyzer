@@ -1,13 +1,19 @@
-from __future__ import annotations
-
 class AssetTypes:
     def __init__(self):
         self.type_groups : set[frozenset[str]] = set()
 
     def add_singleton(self, h: str) -> None:
+        """
+        :param h: asset name to add
+        """
         self.type_groups.add(frozenset([h]))
 
     def merge_types(self, a: str, b:str) -> bool:
+        """
+        :param a: asset name to merge
+        :param b: asset name to merge
+        :return: False if any errors occurred, else True
+        """
         set_a = None
         set_b = None
 
