@@ -1,7 +1,7 @@
 from generated.StipulaVisitor import StipulaVisitor
 from generated.StipulaParser import StipulaParser
 
-from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry, CodeReference
+from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 from classes.data.visitor_output import VisitorOutput
 
@@ -10,6 +10,8 @@ class Visitor(StipulaVisitor):
         StipulaVisitor.__init__(self)
         self.is_verbose = is_verbose
         self.visitor_output = VisitorOutput()
+
+        self.parties : list[str] = list()
 
     def visitStipula(self, ctx: StipulaParser.StipulaContext):
         """
@@ -27,19 +29,16 @@ class Visitor(StipulaVisitor):
               "\n|=========================================|"
               "\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯"
               f"\n{ctx.ID()}")
-        result_compute_function = self.visitor_output.compute_function_local_liquidity()
-        if result_compute_function[0]:
+        are_functions_liquid = self.visitor_output.compute_function_local_liquidity()
+        if are_functions_liquid:
             self.visitor_output.compute_states()
             self.visitor_output.compute_r()
             result_liquidity = self.visitor_output.compute_results_verbose() if self.is_verbose else self.visitor_output.compute_results()
-            if result_liquidity:
-                print(f"\n{ctx.ID()} is liquid")
-            else:
-                print(f"\n{ctx.ID()} is NOT liquid")
+            print(f"\n{ctx.ID()} is{'' if result_liquidity[0] else ' NOT'} liquid")
+            print(f"has events: {result_liquidity[1]}")
+            print(f"has guards: {result_liquidity[2]}")
         else:
             print(f"\n{ctx.ID()} is NOT liquid")
-        print(f"has events: {result_compute_function[1]}")
-        print(f"has guards: {result_compute_function[2]}")
 
     def visitAssetsDecl(self, ctx:StipulaParser.AssetsDeclContext):
         """
@@ -56,7 +55,7 @@ class Visitor(StipulaVisitor):
         """
         self.visitor_output.set_init_state_id(ctx.stateId.text) # set Q0 on visitor_output
         for party in ctx.ID():
-            self.visitor_output.add_party(party.getText())
+            self.parties.append(party.getText())
 
     def visitFunctionDecl(self, ctx:StipulaParser.FunctionDeclContext):
         """
@@ -67,8 +66,7 @@ class Visitor(StipulaVisitor):
         has_guard = bool(ctx.precondition)
         function_visitor_entry = FunctionVisitorEntry(ctx.startStateId.text, ctx.partyId.text,
                                                       ctx.functionId.text, ctx.endStateId.text,
-                                                      CodeReference(ctx.start.line, ctx.stop.line),
-                                                      self.visitor_output.global_assets, list_of_local_assets, has_guard)
+                                                      self.visitor_output.get_global_asset(), list_of_local_assets, has_guard)
         self.visitor_output.add_visitor_function(function_visitor_entry, has_guard)   # update C and Lc on visitor_output
 
         # visit function body
@@ -85,8 +83,7 @@ class Visitor(StipulaVisitor):
             function_visitor_entry.add_event(self.visitEventDecl(func_event_ctx))
 
     def visitEventDecl(self, ctx:StipulaParser.EventDeclContext) -> EventVisitorEntry:
-        event_visitor_entry = EventVisitorEntry(ctx.trigger.getText(), ctx.startStateId.text, ctx.endStateId.text,
-                                                CodeReference(ctx.start.line, ctx.stop.line), self.visitor_output.global_assets)
+        event_visitor_entry = EventVisitorEntry(ctx.trigger.getText(), ctx.startStateId.text, ctx.endStateId.text, self.visitor_output.get_global_asset())
         self.visitor_output.add_visitor_event(event_visitor_entry)
         return event_visitor_entry
 
@@ -107,7 +104,7 @@ class Visitor(StipulaVisitor):
                     print("ERROR visitIfThenElse")
                     return {}
 
-                for el in function_visitor_entry.output_type:
+                for el in function_visitor_entry.get_output_type():
                     function_visitor_entry.set_field_value(el, LiqExpr(LiqConst.UPPER, then_environment[el], else_environment[el]))
                 return function_visitor_entry.get_env()['end']
 
@@ -139,12 +136,12 @@ class Visitor(StipulaVisitor):
                 if left_type == 'ID':
                     # left is an asset
                     left_id = ctx.expression().getText()
-                    if destination_id not in self.visitor_output.parties:
+                    if destination_id not in self.parties:
                         # [L-EXPAUND]
                         destination_value = function_visitor_entry.get_current_field_value(destination_id)
                         left_value = function_visitor_entry.get_current_field_value(left_id)
                         destination_value.add_operation(LiqConst.UPPER, left_value)
-                        function_visitor_entry.asset_types.merge_types(left_id, right_id)
+                        function_visitor_entry.get_asset_types().merge_types(left_id, right_id)
             else:
                 # left -o destination
                 destination_id = ctx.ID(0).getText()
@@ -152,15 +149,15 @@ class Visitor(StipulaVisitor):
                     # left is an asset
                     left_id = ctx.expression().getText()
 
-                    if destination_id not in self.visitor_output.parties:
+                    if destination_id not in self.parties:
                         # [L-AUPDATE]
                         destination_value = function_visitor_entry.get_current_field_value(destination_id)
                         left_value = function_visitor_entry.get_current_field_value(left_id)
                         destination_value.add_operation(LiqConst.UPPER, left_value)
                     # [L-AUPDATE] [L-ASEND]
                     function_visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.EMPTY))
-                    if destination_id not in self.visitor_output.parties:
-                        function_visitor_entry.asset_types.merge_types(left_id, destination_id)
+                    if destination_id not in self.parties:
+                        function_visitor_entry.get_asset_types().merge_types(left_id, destination_id)
                 else:
                     # left is a value
                     # TODO ?

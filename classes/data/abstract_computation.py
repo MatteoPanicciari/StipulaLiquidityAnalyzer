@@ -11,16 +11,14 @@ class AbsComputation:
         self.is_first_function_missing = True
 
         self.configurations : tuple[FunctionVisitorEntry | EventVisitorEntry] = tuple()
-        self.liq_type : tuple[dict[str, LiqExpr]] = tuple()
 
         self.liq_type_begin : list[dict[str, LiqExpr]] = list()
         self.liq_type_end : list[dict[str, LiqExpr]] = list()
 
         self.asset_types : AssetTypes = AssetTypes()
+        self.are_all_types_singleton = True
 
         self.available_events : list[EventVisitorEntry] = list()
-
-        self.are_all_types_singleton = True
 
         if first_function:
             self.insert_configuration(first_function)
@@ -39,20 +37,20 @@ class AbsComputation:
         else:
             self.liq_type_begin.append(entry_env['start'])
             for h in self.liq_type_begin[-1]:
-                if h in entry.global_assets and str(self.liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
+                if h in entry.get_global_assets() and str(self.liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
                     h_value = self.liq_type_end[-1][h].copy_liquidity()
                     self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), h_value)
                     self.liq_type_begin[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_begin[-1][h])
 
-        for g in entry.asset_types:
+        for g in entry.get_asset_types():
             for (a,b) in itertools.combinations(g, 2):
-                if a in entry.global_assets and b in entry.global_assets:
+                if a in entry.get_global_assets() and b in entry.get_global_assets():
                     self.asset_types.merge_types(a,b)
                     self.are_all_types_singleton = False
 
         self.liq_type_end.append(entry_env['end'])
         for h in self.liq_type_end[-1]:
-            if h in entry.global_assets and str(self.liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
+            if h in entry.get_global_assets() and str(self.liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
                 h_value = self.liq_type_begin[-1][h].copy_liquidity()
                 self.liq_type_end[-1][h].replace_value(str(self.liq_type_end[-1][h]), h_value)
                 self.liq_type_end[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_end[-1][h])
@@ -60,15 +58,25 @@ class AbsComputation:
     def count(self, entry: FunctionVisitorEntry | EventVisitorEntry):
         return Counter(self.configurations)[entry]
 
+    # unused
     def get_first_state(self) -> str:
         if self.configurations:
-            return self.configurations[0].start_state
+            return self.configurations[0].get_start_state()
         return ''
 
     def get_last_state(self) -> str:
         if self.configurations:
-            return self.configurations[-1].end_state
+            return self.configurations[-1].get_end_state()
         return ''
+
+    def get_asset_types(self) -> AssetTypes:
+        return self.asset_types
+
+    def get_available_events(self) -> list[EventVisitorEntry]:
+        return self.available_events
+
+    def get_are_all_types_singleton(self) -> bool:
+        return self.are_all_types_singleton
 
     def get_env(self) -> dict[str, dict[str,LiqExpr]]:
         return {'start': self.liq_type_begin[0], 'end': self.liq_type_end[-1]}
@@ -92,7 +100,7 @@ class AbsComputation:
         if initial_state:
             append = False
             for configuration in self.configurations:
-                if configuration.start_state == initial_state:
+                if configuration.get_start_state() == initial_state:
                     append = True
                 if append:
                     result.insert_configuration(configuration)

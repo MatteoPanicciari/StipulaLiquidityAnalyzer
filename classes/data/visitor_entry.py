@@ -1,23 +1,17 @@
 from classes.data.asset_types import AssetTypes
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 
-class CodeReference:
-    def __init__(self, start_line, end_line):
-        self.start_line = start_line
-        self.end_line = end_line
-
 class VisitorEntry:
     xi_count : int = 1
 
-    def __init__(self, start_state, end_state, code_reference: CodeReference, global_assets):
-        self.start_state = start_state
-        self.end_state = end_state
-        self.code_reference = code_reference
+    def __init__(self, start_state, end_state, global_assets):
+        self.start_state : str = start_state
+        self.end_state : str = end_state
 
         self.input_type: dict[str, LiqExpr] = {}
         self.output_type: dict[str, list[LiqExpr | None]] = {}
 
-        self.global_assets = global_assets
+        self.global_assets : set[str] = global_assets
 
         self.asset_types : AssetTypes = AssetTypes()
 
@@ -27,6 +21,7 @@ class VisitorEntry:
             self.xi_count += 1
             self.asset_types.add_singleton(h)
 
+    # region environment levels
     def add_env_level(self):
         for el in self.output_type:
             self.output_type[el].append(None)
@@ -34,9 +29,27 @@ class VisitorEntry:
     def del_env_level(self):
         for el in self.output_type:
             self.output_type[el].pop()
+    # endregion environment levels
 
+
+    # region getter setter
     def set_field_value(self, field: str, value: LiqExpr):
         self.output_type[field][-1] = value
+
+    def get_start_state(self) -> str:
+        return self.start_state
+
+    def get_end_state(self) -> str:
+        return self.end_state
+
+    def get_output_type(self) -> dict[str, list[LiqExpr | None]]:
+        return self.output_type
+
+    def get_asset_types(self) -> AssetTypes:
+        return self.asset_types
+
+    def get_global_assets(self) -> set[str]:
+        return self.global_assets
 
     def get_current_field_value(self, field) -> LiqExpr:
         count = 1
@@ -51,6 +64,7 @@ class VisitorEntry:
         for el in self.output_type:
             output_type_result[el] = LiqExpr.resolve_partial_eval(self.get_current_field_value(el))
         return {'start': self.input_type, 'end': output_type_result}
+    # endregion getter setter
 
     def copy_global_env(self) -> dict[str, dict[str, LiqExpr]]:
         entry_type = self.get_env()
@@ -62,17 +76,18 @@ class VisitorEntry:
 
 
 class EventVisitorEntry(VisitorEntry):
-    def __init__(self, trigger, start_state, end_state, code_reference, global_assets):
-        super().__init__(start_state, end_state, code_reference, global_assets)
+    def __init__(self, trigger, start_state, end_state, global_assets):
+        super().__init__(start_state, end_state, global_assets)
         self.trigger = trigger
 
     def __str__(self):
         return f"{self.start_state} {self.trigger} {self.end_state}"
     __repr__ = __str__
 
+
 class FunctionVisitorEntry(VisitorEntry):
-    def __init__(self, start_state, handler, code_id, end_state, code_reference, global_assets, local_assets, has_guard):
-        super().__init__(start_state, end_state, code_reference, global_assets)
+    def __init__(self, start_state, handler, code_id, end_state, global_assets, local_assets, has_guard):
+        super().__init__(start_state, end_state, global_assets)
         self.code_id = code_id
         self.handler = handler
 

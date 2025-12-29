@@ -8,25 +8,23 @@ K: int = 1
 class VisitorOutput:
     def __init__(self):
         self.Q0 : str = ''  # initial state
-        self.parties: list[str] = list()
         self.global_assets: set[str] = set()
+
         self.functions: set[FunctionVisitorEntry] = set()
         self.events: set[EventVisitorEntry] = set()
         self.abs_computations: set[AbsComputation] = set()
-        self.final_states: set[str] = set()
-        self.reachable_states: set[str] = set()
 
         self.states: set[str] = set()
+        self.reachable_states: set[str] = set()
+
         self.Tqk : dict[str, set[AbsComputation]] = dict()
         self.Qq : dict[str, set[FunctionVisitorEntry | EventVisitorEntry]] = dict()
-
-        self.abs_computations_to_final_state : set[AbsComputation] = set()
 
         self.has_events: bool = False
         self.has_guards: bool = False
 
 
-    def compute_results_verbose(self) -> bool:
+    def compute_results_verbose(self) -> tuple[bool, bool, bool]:
         print(f"\tFunction Liquidity Types:")
         for entry in (self.functions | self.events):
             entry_env = entry.get_env()
@@ -34,7 +32,7 @@ class VisitorOutput:
             print(f"\t\t\tLIQUIDITY TYPE:")
             print(f"\t\t\t\t{entry_env['start']} -> {entry_env['end']}")
             print(f"\t\t\tASSET TYPES:")
-            print(f"\t\t\t\t{entry.asset_types}")
+            print(f"\t\t\t\t{entry.get_asset_types()}")
             if isinstance(entry, FunctionVisitorEntry):
                 print(f"\t\t\tEVENTS LIST:")
                 print(f"\t\t\t\t{entry.events_list}")
@@ -46,43 +44,40 @@ class VisitorOutput:
             print(f"\t\t\tLIQUIDITY TYPE:")
             print(f"\t\t\t\t{abs_comp_env['start']} -> {abs_comp_env['end']}")
             print(f"\t\t\tASSET TYPES:")
-            print(f"\t\t\t\t{abs_computation.asset_types}")
-            print(f"\t\t\tARE ALL ALL SINGLETON:")
-            print(f"\t\t\t\t{abs_computation.are_all_types_singleton}")
+            print(f"\t\t\t\t{abs_computation.get_asset_types()}")
+            print(f"\t\t\tARE ALL ASSET TYPES SINGLETON:")
+            print(f"\t\t\t\t{abs_computation.get_are_all_types_singleton()}")
 
         return self.compute_results()
 
 
-    def compute_results(self) -> bool:
+    def compute_results(self) -> tuple[bool, bool, bool]:
         self.compute_qq()
         self.compute_reachable_states()
         self.compute_tqk()
         are_all_types_singleton = all(
-            abs_computation.are_all_types_singleton
+            abs_computation.get_are_all_types_singleton()
             for abs_computation in self.abs_computations
         )
         if are_all_types_singleton:
-            return self.costly_algorithm_k_separate()
+            return self.costly_algorithm_k_separate(), self.has_events, self.has_guards
         else:
-            return self.costly_algorithm_complete()
+            return self.costly_algorithm_complete(), self.has_events, self.has_guards
 
 
     # Definition 1 : constraint 1
-    def compute_function_local_liquidity(self) -> tuple[bool, bool, bool]:
+    def compute_function_local_liquidity(self) -> bool :
         for entry in self.functions:
             par = entry.compute_local_liquidity()
             if par:
                 print(f"\t{entry}\n\t\tis NOT local liquid: {par}")
-                return False, self.has_events, self.has_guards
-        return True, self.has_events, self.has_guards
+                return False
+        return True
 
 
+    # region setter
     def set_init_state_id(self, state_id):
         self.Q0 = state_id
-
-
-    def add_party(self, party_id):
-        self.parties.append(party_id)
 
 
     def add_visitor_function(self, visitor_entry: FunctionVisitorEntry, has_guard: bool = False):
@@ -97,6 +92,10 @@ class VisitorOutput:
 
     def add_global_asset(self, asset):
         self.global_assets.add(asset.text)
+
+    def get_global_asset(self) -> set[str]:
+         return self.global_assets
+    # endregion setter
 
 
     def compute_r(self):
@@ -125,7 +124,7 @@ class VisitorOutput:
                         for event in function.events_list:
                             new_abs_computation.add_available_event(event)
                         computations_to_add.add(new_abs_computation)
-                for event in abs_computation.available_events:
+                for event in abs_computation.get_available_events():
                     if event.start_state == abs_computation.get_last_state():
                         new_abs_computation = abs_computation.copy_abs_computation()
                         new_abs_computation.insert_configuration(event)
@@ -157,8 +156,6 @@ class VisitorOutput:
             self.reachable_states.add(entry.end_state)
 
 
-    # TODO modificare sta roba perché fa schifo
-    #   modificare compute_R includendo anche le abs_comp che non partano da Q0, così qui fai un ciclo for in meno senza quel copy_abs_comp
     def compute_tqk(self):
         for state in self.states:
             self.Tqk[state] = set()
@@ -174,9 +171,9 @@ class VisitorOutput:
             self.states.add(entry.start_state)
             self.states.add(entry.end_state)
             initial_states.add(entry.start_state)
-        self.final_states = self.states - initial_states
 
 
+    # region efficient algorithm (unused)
     def efficient_algorithm_k_separate(self) -> bool:
         # step 1
         self.compute_qq()
@@ -248,8 +245,9 @@ class VisitorOutput:
                         return False
         # step 2.1
         return True
+    # endregion efficient algorithm (unused)
 
-
+    # region costly algorithm
     def costly_algorithm_k_separate(self):
         for k in self.global_assets:
             z : set[str] = set()
@@ -272,7 +270,7 @@ class VisitorOutput:
                                     is_missing_state_added = True
                                     break
                             if not is_missing_state_added:
-                                print(f"\t\t\t\tCOSTLY K-SEPARATE: {state}, {k}, {abs_computation}")
+                                print(f"\tCOSTLY K-SEPARATE - not liquid in:\n\t\tstate: {state}\n\t\tasset: {k}:\n\t\tcomp: {abs_computation}")
                                 return False
         return True
 
@@ -307,8 +305,9 @@ class VisitorOutput:
                             is_found = True
                             break
                     if not is_found:
-                        print(f"\t\t\t\tCOSTLY COMPLETE: {abs_computation} {kbar}")
+                        print(f"\tCOSTLY COMPLETE - not liquid in:\n\t\tstate: {state}\n\t\tcomp: {abs_computation}\n\t\tkbar: {kbar}")
                         return False
                 else:
                     return True
         return True
+    # endregion costly algorithm
