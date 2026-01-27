@@ -20,9 +20,9 @@ def run(file_path: str, is_verbose: bool = False):
 
 @click.command()
 @click.argument("file_path", default="./TESTS/Fill_Move.stipula")
-@click.option("-v", "--verbose", default=False)
-def cli_main(file_path, verbose):
-    run(file_path, verbose)
+@click.option("-v", "--verbose", "is_verbose", type=bool, default=False, show_default=True, is_flag=True, help='Show verbose output.')
+def cli_main(file_path, is_verbose):
+    run(file_path, is_verbose)
 
 if __name__ == "__main__":
     cli_main()
