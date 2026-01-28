@@ -3,7 +3,7 @@ from generated.StipulaParser import StipulaParser
 
 from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
-from classes.liquidity_computer import LiquidityComputer
+from classes.liquidity_analyzer import LiquidityComputer
 
 class LiquidityVisitor(StipulaVisitor):
     def __init__(self, is_verbose):
