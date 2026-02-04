@@ -1,6 +1,7 @@
 import sys
 import antlr4
 import click
+from pathlib import Path
 
 from generated.StipulaLexer import StipulaLexer
 from generated.StipulaParser import StipulaParser
@@ -19,10 +20,19 @@ def run(file_path: str, is_verbose: bool = False):
     LiquidityVisitor(is_verbose).visit(tree)
 
 @click.command()
-@click.argument("file_path", default="./TESTS/Fill_Move.stipula")
+@click.argument("file_path", default="./TESTS")
 @click.option("-v", "--verbose", "is_verbose", type=bool, default=False, show_default=True, is_flag=True, help='Show verbose output.')
 def cli_main(file_path, is_verbose):
-    run(file_path, is_verbose)
+    path = Path(file_path)
+
+    if path.is_file():
+        if path.suffix == ".stipula":
+            run(file_path, is_verbose)
+    elif path.is_dir():
+        for stipula_file in path.rglob("*.stipula"):
+            run(stipula_file, is_verbose)
+    else:
+        raise ValueError(f"Path does not exist: {path}")
 
 if __name__ == "__main__":
     cli_main()
@@ -33,3 +43,5 @@ if __name__ == "__main__":
 #   capire se gli algoritmi di tqk e liquidity sono effettivamente come devono essere per costo computazionale
 #   testare all'infinito
 #   gestire meglio gli errori (es: chiamo il get_field_value con un field inesistente, lo devo gestire io?)
+#   mettere k tra l'input?
+#   fare i pytest

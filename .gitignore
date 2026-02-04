@@ -2,3 +2,4 @@
 .antlr
 .idea
 *.pyc
+venv
