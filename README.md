@@ -3,7 +3,7 @@
 ## Installation
 
 ### Linux
-1. Install Python, you ca use:
+1. Install Python, you can use:
    - Your distro package manager
    - The Python site (https://www.python.org/downloads/)
 2. Install Antlr4, you can use:
@@ -34,6 +34,13 @@
 To run an example, open a terminal in the repository directory and run
 (use `python3.11` on MacOS or `python` on Windows)
 
-`python3 main.py`
+`python3 main.py FILE [-v | --verbose]`
 
-For now, you can manually change the contract to analyze and the is_verbose option in tha `_main()` call
+`FILE`: path to your stipula contract to analyze or the path to your contracts folder to analyze all of them.
+
+`-v | --verbose`: option to have a verbose result.
+
+## Stipula-Workbench
+
+It's possible to use the analyzer from the stipula-workbench project with a user-friendly interface and the possibility of creating your own stipula contracts.
+(https://github.com/stipula-language/stipula-workbench)
