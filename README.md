@@ -44,3 +44,6 @@ To run an example, open a terminal in the repository directory and run
 
 It's possible to use the analyzer from the stipula-workbench project with a user-friendly interface and the possibility of creating your own stipula contracts.
 (https://github.com/stipula-language/stipula-workbench)
+
+## License
+This project is licensed under the GNU General Public License v3.0.
