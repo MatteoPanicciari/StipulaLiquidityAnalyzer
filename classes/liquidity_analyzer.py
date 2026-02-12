@@ -5,7 +5,7 @@ from classes.data.liquidity_expression import LiqExpr, LiqConst
 # maximum number of times a function can appear in the same abstract computation (k-canonical)
 K: int = 1
 
-class LiquidityComputer:
+class LiquidityAnalyzer:
     def __init__(self):
         self.Q0 : str = ''  # initial state
         self.global_assets: set[str] = set()
