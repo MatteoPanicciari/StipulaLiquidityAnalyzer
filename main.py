@@ -17,7 +17,8 @@ def run(file_path: str, is_verbose: bool = False):
     if parser.getNumberOfSyntaxErrors() > 0:
         print('Syntax errors')
         sys.exit(1)
-    LiquidityVisitor(is_verbose).visit(tree)
+    visitor = LiquidityVisitor(is_verbose)
+    visitor.visit(tree)
 
 @click.command()
 @click.argument("file_path", default="./TESTS")
@@ -28,6 +29,8 @@ def cli_main(file_path, is_verbose):
     if path.is_file():
         if path.suffix == ".stipula":
             run(file_path, is_verbose)
+        else:
+            raise ValueError(f"File type '{path.suffix}' is not supported.")
     elif path.is_dir():
         for stipula_file in path.rglob("*.stipula"):
             run(stipula_file, is_verbose)
