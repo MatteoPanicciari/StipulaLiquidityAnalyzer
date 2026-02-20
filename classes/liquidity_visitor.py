@@ -18,15 +18,10 @@ class LiquidityVisitor(StipulaVisitor):
               "\n|=========================================|"
               "\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯"
               f"\n{contract_name}")
-        are_functions_liquid = self.analyzer.compute_function_local_liquidity()
-        if are_functions_liquid:
-            self.analyzer.compute_abs_computations()
-            result_liquidity = self.analyzer.compute_results_verbose() if self.is_verbose else self.analyzer.compute_results()
-            print(f"\n{contract_name} is{'' if result_liquidity[0] else ' NOT'} liquid")
-            print(f"has events: {result_liquidity[1]}")
-            print(f"has guards: {result_liquidity[2]}")
-        else:
-            print(f"\n{contract_name} is NOT liquid")
+        result_liquidity = self.analyzer.compute_results_verbose() if self.is_verbose else self.analyzer.compute_results()
+        print(f"\n{contract_name} is{'' if result_liquidity[0] else ' NOT'} liquid")
+        print(f"has events: {result_liquidity[1]}")
+        print(f"has guards: {result_liquidity[2]}")
 
     def visitStipula(self, ctx: StipulaParser.StipulaContext):
         """
@@ -64,7 +59,7 @@ class LiquidityVisitor(StipulaVisitor):
         Visit agreement
         i.e. : agreement(parts) { f } => @Q0
         """
-        self.analyzer.set_init_state_id(ctx.stateId.text) # set Q0 on visitor_output
+        self.analyzer.set_q0(ctx.stateId.text) # set Q0 on visitor_output
         for party in ctx.ID():
             self.parties.append(party.getText())
 

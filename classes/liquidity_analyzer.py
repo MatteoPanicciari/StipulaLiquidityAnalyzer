@@ -18,13 +18,15 @@ class LiquidityAnalyzer:
         self.reachable_states: set[str] = set()
 
         self.Tqk : dict[str, set[AbsComputation]] = dict()
-        self.Qq : dict[str, set[FunctionVisitorEntry | EventVisitorEntry]] = dict()
+        self.Qq : dict[str, set[FunctionVisitorEntry | EventVisitorEntry]] = dict()     # unused (not in the thesis)
 
         self.has_events: bool = False
         self.has_guards: bool = False
 
     # region compute results
     def compute_results_verbose(self) -> tuple[bool, bool, bool]:
+        results = self.compute_results()
+
         print(f"\tFunction Liquidity Types:")
         for entry in (self.functions | self.events):
             entry_env = entry.get_env()
@@ -47,9 +49,14 @@ class LiquidityAnalyzer:
             print(f"\t\t\t\t{abs_computation.get_asset_types()}")
             print(f"\t\t\tARE ALL ASSET TYPES SINGLETON:")
             print(f"\t\t\t\t{abs_computation.get_are_all_types_singleton()}")
-        return self.compute_results()
+        return results
 
     def compute_results(self) -> tuple[bool, bool, bool]:
+        self.compute_states()
+        # Computes abs_comps before local_liq, so abs_comps are always already available in verbose
+        self.compute_abs_computations()
+        if not self.compute_function_local_liquidity():
+            return False, self.has_events, self.has_guards
         self.compute_reachable_states()
         self.compute_tqk()
         are_all_types_singleton = all(
@@ -63,7 +70,7 @@ class LiquidityAnalyzer:
     # endregion compute results
 
     # region getter, setter
-    def set_init_state_id(self, state_id):
+    def set_q0(self, state_id):
         self.Q0 = state_id
 
     def add_visitor_function(self, visitor_entry: FunctionVisitorEntry, has_guard: bool = False):
@@ -95,21 +102,21 @@ class LiquidityAnalyzer:
                 return False
         return True
 
-    def compute_abs_computations(self) -> None:
+    def compute_states(self):
         """
-        Compute states and abstract computations starting from Q0
+        Computes all the states
         """
         self.states = set()
-        for event in self.events:
+        for entry in self.events | self.functions:
             # fill states set
-            self.states.add(event.start_state)
-            self.states.add(event.end_state)
+            self.states.add(entry.start_state)
+            self.states.add(entry.end_state)
 
+    def compute_abs_computations(self) -> None:
+        """
+        Compute abstract computations starting from Q0
+        """
         for function in self.functions:
-            # fill states set
-            self.states.add(function.start_state)
-            self.states.add(function.end_state)
-
             if function.start_state == self.Q0:
                 # create an abs_computation formed only by the function if function starts in Q0
                 abs_computation = AbsComputation()
@@ -168,6 +175,8 @@ class LiquidityAnalyzer:
             self.Tqk[state] = set()
         for abs_computation in self.abs_computations:
             for configuration in abs_computation:
+                # TODO: errore: se nella computazione c'è due volte la stessa funzione e noi volevamo
+                #  partire dalla seconda, prenderà sempre la prima
                 self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
 
     # region efficient algorithm (unused)

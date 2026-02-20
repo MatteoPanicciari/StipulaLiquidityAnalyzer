@@ -111,7 +111,7 @@ class AbsComputation:
 
     def copy_abs_computation(self, initial_state: str = '') -> AbsComputation:
         # TODO: possibile problema con comp in cui passo piu volte nello stesso stato, se voglio copiare la comp
-        #  dalla seconda volta che son passato in quello ststo, ricverò sempre la prima ig
+        #  dalla seconda volta che son passato in quello stato, riceverò sempre la prima ig
         """
         :param initial_state: The computation copied will start from the initial_state (if it occurs in the computation).
             If empty, the copied computation will be exactly the same
