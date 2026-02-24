@@ -4,7 +4,7 @@ from classes.data.liquidity_expression import LiqExpr, LiqConst
 class VisitorEntry:
     xi_count : int = 1
 
-    def __init__(self, start_state: str, end_state: str, global_assets: set[str]):
+    def __init__(self, start_state: str, end_state: str, global_assets: list[str]):
         self.start_state: str = start_state
         self.end_state: str = end_state
 
@@ -15,7 +15,7 @@ class VisitorEntry:
         # If LiqExpr is none, the level to consider is the previous one
         self.output_env: dict[str, list[LiqExpr | None]] = dict()
 
-        self.global_assets: set[str] = global_assets
+        self.global_assets: list[str] = global_assets
 
         self.asset_types: AssetTypes = AssetTypes()
 
@@ -56,7 +56,7 @@ class VisitorEntry:
     def merge_function_asset_types(self, first: str, second: str) -> None:
         self.asset_types.merge_types(first, second)
 
-    def get_global_assets(self) -> set[str]:
+    def get_global_assets(self) -> list[str]:
         return self.global_assets
 
     def get_current_field_value(self, field: str) -> LiqExpr | None:
@@ -88,7 +88,7 @@ class VisitorEntry:
 
 
 class EventVisitorEntry(VisitorEntry):
-    def __init__(self, trigger: str, start_state: str, end_state: str, global_assets: set[str]):
+    def __init__(self, trigger: str, start_state: str, end_state: str, global_assets: list[str]):
         super().__init__(start_state, end_state, global_assets)
         self.trigger: str = trigger
 
@@ -99,7 +99,7 @@ class EventVisitorEntry(VisitorEntry):
 
 class FunctionVisitorEntry(VisitorEntry):
     def __init__(self, start_state: str, handler: str, code_id: str, end_state: str,
-                 global_assets: set[str], local_assets: set[str], has_guard: bool):
+                 global_assets: list[str], local_assets: set[str], has_guard: bool):
         super().__init__(start_state, end_state, global_assets)
         self.code_id: str = code_id
         self.handler: str = handler

@@ -8,7 +8,7 @@ K: int = 1
 class LiquidityAnalyzer:
     def __init__(self):
         self.Q0 : str = ''  # initial state
-        self.global_assets: set[str] = set()
+        self.global_assets: list[str] = list()
 
         self.functions: set[FunctionVisitorEntry] = set()
         self.events: set[EventVisitorEntry] = set()
@@ -82,9 +82,9 @@ class LiquidityAnalyzer:
         self.has_events = True
 
     def add_global_asset(self, asset):
-        self.global_assets.add(asset.text)
+        self.global_assets.append(asset.text)
 
-    def get_global_asset(self) -> set[str]:
+    def get_global_asset(self) -> list[str]:
          return self.global_assets
     # endregion setter
 
@@ -315,7 +315,7 @@ class LiquidityAnalyzer:
                                 is_abs_comp_valid = False
                                 break
                         if is_abs_comp_valid:
-                            for h in self.global_assets - kbar:
+                            for h in set(self.global_assets) - kbar:
                                 if (abs_computation_p.get_env()['end'][h] != LiqExpr(LiqConst.EMPTY) and
                                     abs_computation_p.get_env()['start'][h] != abs_computation_p.get_env()['end'][h]):
                                     is_abs_comp_valid = False
