@@ -1,0 +1,32 @@
+stipula Escrow {
+  assets wallet
+  fields amount,fee, t
+
+  agreement(A,B,M){
+    A,B :amount, t
+    A,B,M: fee
+  } => @Init
+
+  @Init A: init()[h] (h >= amount){
+      h -o wallet
+      now + t  >> @First { wallet -o A } => @End
+  } => @First
+
+  @First B: init()[h] (h >= amount){
+      h -o wallet
+      now + t >> @Running { } => @Dispute
+   } => @Running
+
+  @Running A : authorize()[]{
+      wallet -o B
+  } => @End
+
+  @Running B : authorize()[]{
+      wallet -o A
+  } => @End
+
+  @Dispute M: resolve(x)[]{
+     fee -o wallet, M
+     if (x) { wallet -o A } else { wallet -o B }
+  } => @End
+}

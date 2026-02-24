@@ -1,0 +1,42 @@
+stipula Mutual_Timed_Commitment {
+  assets wallet
+  fields secretA, secretB, amount, deadline
+
+
+  agreement(A,B){
+    A,B:amount,deadline
+  } => @Init
+
+  @Init A: start(x)[h] (h >= amount){
+           x -> secretA
+  h -o wallet
+  } => @First
+
+  @First B: start(x)[h](h >= amount){
+           x -> secretB
+  h -o wallet
+           now + deadline >> @Running { 0.5 * wallet -o wallet, A    wallet -o B } => @Expired
+           now + deadline >> @ARevealed { wallet -o A } => @Expired
+  now + deadline >> @BRevealed { wallet -o B } => @Expired
+  } => @Running
+
+   @Running A: reveal()[]{
+   } => @ARevealed
+
+   @Arevealed B:reveal()[]{
+      secretA -> B
+      secretB -> A
+      0.5 * wallet -o wallet, A
+      wallet -o B
+   } => @End
+
+   @Running B: reveal()[]{
+   } => @BRevealed
+
+   @Brevealed A:reveal()[]{
+      secretA -> B
+      secretB -> A
+      0.5 * wallet -o wallet, A
+      wallet -o B
+   } => @End
+}

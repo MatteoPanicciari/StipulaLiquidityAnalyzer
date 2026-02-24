@@ -1,0 +1,20 @@
+/* Liquid */
+
+stipula Sample {
+    assets wallet
+    fields t
+
+    agreement(A,B){
+        A,B : t
+    } => @Init
+
+    @Init A: init()[h] {
+        h -o wallet
+        now + t  >> @First { 0.2 * wallet -o wallet, A   wallet -o B } => @End
+    } => @First
+
+    @First B: buy()[h] {
+        h -o A
+        wallet -o B
+    } => @End
+}
