@@ -25,6 +25,15 @@ class AbsComputation:
         # events table - list of callable events for this abs_comp
         self.available_events : list[EventVisitorEntry] = list()
 
+    def compute_liquidity_type(self, result, prev, entry_env_idx: str):
+        entry = self.configurations[-1]
+        entry_env = entry.get_env()
+        for idx in entry.get_global_assets():
+            result[idx] = entry_env[entry_env_idx][idx].copy_liquidity()
+        for idx in entry.get_global_assets():
+            for prev_idx in entry.get_global_assets():
+                result[idx].replace_value(str(entry_env['start'][prev_idx]), prev[prev_idx].copy_liquidity())
+                result[idx] = LiqExpr.resolve_partial_eval(result[idx])
 
     def insert_configuration(self, entry: FunctionVisitorEntry | EventVisitorEntry) -> None:
         """
@@ -36,27 +45,18 @@ class AbsComputation:
 
         # Compute: Liquidity type of abstract computation (Def 3)
         # Def 3 - begin
-        entry_env = entry.copy_global_env()
+        self.liq_type_begin.append(dict())
         if self.is_first_function_missing:
             self.is_first_function_missing = False
-            self.liq_type_begin.append(entry_env['start'])
-            for h in self.liq_type_begin[-1]:
-                self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), LiqExpr(LiqConst.EMPTY))
+            for h in entry.global_assets:
+                self.liq_type_begin[-1][h] = entry.get_env()['start'][h].copy_liquidity()
                 self.asset_types.add_singleton(h)
         else:
-            self.liq_type_begin.append(entry_env['start'])
-            for h in self.liq_type_begin[-1]:
-                if h in entry.get_global_assets() and str(self.liq_type_begin[-1][h]) not in LiqConst.CONSTANTS:
-                    h_value = self.liq_type_end[-1][h].copy_liquidity()
-                    self.liq_type_begin[-1][h].replace_value(str(self.liq_type_begin[-1][h]), h_value)
-                    self.liq_type_begin[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_begin[-1][h])
+            self.compute_liquidity_type(self.liq_type_begin[-1], self.liq_type_end[-1], 'start')
+
         # Def 3 - end
-        self.liq_type_end.append(entry_env['end'])
-        for h in self.liq_type_end[-1]:
-            if h in entry.get_global_assets() and str(self.liq_type_end[-1][h]) not in LiqConst.CONSTANTS:
-                h_value = self.liq_type_begin[-1][h].copy_liquidity()
-                self.liq_type_end[-1][h].replace_value(str(self.liq_type_end[-1][h]), h_value)
-                self.liq_type_end[-1][h] = LiqExpr.resolve_partial_eval(self.liq_type_end[-1][h])
+        self.liq_type_end.append(dict())
+        self.compute_liquidity_type(self.liq_type_end[-1], self.liq_type_begin[-1], 'end')
 
         # Merges the abs_computation asset_types according to the asset_types sets contained in the entry.
         # If the asset types A and B are merged in the entry, the groups already formed in abs_computation
