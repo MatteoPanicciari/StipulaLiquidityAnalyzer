@@ -95,43 +95,52 @@ class LiquidityVisitor(StipulaVisitor):
         """
         event_visitor_entry = EventVisitorEntry(ctx.trigger.getText(), ctx.startStateId.text, ctx.endStateId.text, self.analyzer.get_global_asset())
         self.analyzer.add_visitor_event(event_visitor_entry)
+        for func_statement_ctx in ctx.statement():
+            if func_statement_ctx.ifThenElse():
+                self.visitIfThenElse(func_statement_ctx.ifThenElse(), event_visitor_entry)
+            elif func_statement_ctx.assetOperation():
+                self.visitAssetOperation(func_statement_ctx.assetOperation(), event_visitor_entry)
+            elif func_statement_ctx.fieldOperation():
+                self.visitFieldOperation(func_statement_ctx.fieldOperation())
+            else:
+                print("ERROR visitEventDecl")
         return event_visitor_entry
 
-    def visitIfThenElse(self, ctx: StipulaParser.IfThenElseContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiqExpr]:
+    def visitIfThenElse(self, ctx: StipulaParser.IfThenElseContext, visitor_entry: FunctionVisitorEntry | EventVisitorEntry = None) -> dict[str, LiqExpr]:
         if ctx.expression():
             if ctx.functionBody(0):
-                then_environment = self.visitFunctionBody(ctx.functionBody(0), function_visitor_entry)
+                then_environment = self.visitFunctionBody(ctx.functionBody(0), visitor_entry)
                 if ctx.functionBody(1):
-                    else_environment = self.visitFunctionBody(ctx.functionBody(1), function_visitor_entry)
+                    else_environment = self.visitFunctionBody(ctx.functionBody(1), visitor_entry)
                 elif ctx.ifThenElse():
-                    else_environment = self.visitIfThenElse(ctx.ifThenElse(), function_visitor_entry)
+                    else_environment = self.visitIfThenElse(ctx.ifThenElse(), visitor_entry)
                 else:
                     print("ERROR visitIfThenElse")
                     return {}
 
-                for el in function_visitor_entry.get_output_type():
-                    function_visitor_entry.set_field_value(el, LiqExpr(LiqConst.UPPER, then_environment[el], else_environment[el]))
-                return function_visitor_entry.get_env()['end']
+                for el in visitor_entry.get_output_type():
+                    visitor_entry.set_field_value(el, LiqExpr(LiqConst.UPPER, then_environment[el], else_environment[el]))
+                return visitor_entry.get_env()['end']
 
         print("ERROR visitIfThenElse")
         return {}
 
-    def visitFunctionBody(self, ctx: StipulaParser.FunctionBodyContext, function_visitor_entry: FunctionVisitorEntry = None) -> dict[str, LiqExpr]:
-        function_visitor_entry.add_env_level()
+    def visitFunctionBody(self, ctx: StipulaParser.FunctionBodyContext, visitor_entry: FunctionVisitorEntry | EventVisitorEntry = None) -> dict[str, LiqExpr]:
+        visitor_entry.add_env_level()
         for func_statement_ctx in ctx.statement():
             if func_statement_ctx.ifThenElse():
-                self.visitIfThenElse(func_statement_ctx.ifThenElse(), function_visitor_entry)
+                self.visitIfThenElse(func_statement_ctx.ifThenElse(), visitor_entry)
             elif func_statement_ctx.assetOperation():
-                self.visitAssetOperation(func_statement_ctx.assetOperation(), function_visitor_entry)
+                self.visitAssetOperation(func_statement_ctx.assetOperation(), visitor_entry)
             elif func_statement_ctx.fieldOperation():
                 self.visitFieldOperation(func_statement_ctx.fieldOperation())
             else:
                 print("ERROR visitFunctionDecl")
-        result = function_visitor_entry.get_env()['end']
-        function_visitor_entry.del_env_level()
+        result = visitor_entry.get_env()['end']
+        visitor_entry.del_env_level()
         return result
 
-    def visitAssetOperation(self, ctx: StipulaParser.AssetOperationContext, function_visitor_entry: FunctionVisitorEntry = None):
+    def visitAssetOperation(self, ctx: StipulaParser.AssetOperationContext, visitor_entry: FunctionVisitorEntry | EventVisitorEntry = None):
         if ctx.expression():
             left_type = self.visitExpression(ctx.expression())
             if ctx.ID(1):
@@ -143,10 +152,10 @@ class LiquidityVisitor(StipulaVisitor):
                     left_id = ctx.expression().getText()
                     if destination_id not in self.parties:
                         # [L-EXPAUND]
-                        destination_value = function_visitor_entry.get_current_field_value(destination_id)
-                        left_value = function_visitor_entry.get_current_field_value(left_id)
+                        destination_value = visitor_entry.get_current_field_value(destination_id)
+                        left_value = visitor_entry.get_current_field_value(left_id)
                         destination_value.add_operation(LiqConst.UPPER, left_value)
-                        function_visitor_entry.merge_function_asset_types(left_id, right_id)
+                        visitor_entry.merge_function_asset_types(left_id, right_id)
             else:
                 # left -o destination
                 destination_id = ctx.ID(0).getText()
@@ -156,13 +165,13 @@ class LiquidityVisitor(StipulaVisitor):
 
                     if destination_id not in self.parties:
                         # [L-AUPDATE]
-                        destination_value = function_visitor_entry.get_current_field_value(destination_id)
-                        left_value = function_visitor_entry.get_current_field_value(left_id)
+                        destination_value = visitor_entry.get_current_field_value(destination_id)
+                        left_value = visitor_entry.get_current_field_value(left_id)
                         destination_value.add_operation(LiqConst.UPPER, left_value)
                     # [L-AUPDATE] [L-ASEND]
-                    function_visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.EMPTY))
+                    visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.EMPTY))
                     if destination_id not in self.parties:
-                        function_visitor_entry.merge_function_asset_types(left_id, destination_id)
+                        visitor_entry.merge_function_asset_types(left_id, destination_id)
                 else:
                     # left is a value
                     pass
@@ -207,6 +216,10 @@ class LiquidityVisitor(StipulaVisitor):
                 right_exp_type = self.visitExpression3(ctx.expression3())
                 if left_exp_type == right_exp_type:
                     return left_exp_type
+                elif left_exp_type == 'NUMBER':
+                    return right_exp_type
+                elif right_exp_type == 'NUMBER':
+                    return left_exp_type
                 return ''
             return left_exp_type
         return ''
@@ -218,6 +231,10 @@ class LiquidityVisitor(StipulaVisitor):
             if ctx.expression4():
                 right_exp_type = self.visitExpression4(ctx.expression4())
                 if left_exp_type == right_exp_type:
+                    return left_exp_type
+                elif left_exp_type == 'NUMBER':
+                    return right_exp_type
+                elif right_exp_type == 'NUMBER':
                     return left_exp_type
                 return ''
             return left_exp_type
