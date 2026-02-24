@@ -29,8 +29,11 @@ class LiqExpr:
 
     def replace_value(self, start_value: str, end_value: LiqExpr):
         if self.value in LiqConst.OPERATORS and self.left and self.right:
-            self.left.replace_value(start_value, end_value)
-            self.right.replace_value(start_value, end_value)
+            if id(self) == id(self.left) or id(self) == id(self.right):
+                print("ERROR replace_value")
+            else:
+                self.left.replace_value(start_value, end_value)
+                self.right.replace_value(start_value, end_value)
         elif self.value == start_value:
             new_node = end_value.copy_liquidity()
             self.value = new_node.value
@@ -81,6 +84,9 @@ class LiqExpr:
 
     # region magic methods, deepcopy
     def __str__(self):
+        if id(self)==id(self.right) or id(self)==id(self.left):
+            print("ERROR __str__")
+            return "_"
         if self.left is None or self.right is None:
             return self.value
         return f'({self.left} {self.value} {self.right})'
@@ -96,5 +102,7 @@ class LiqExpr:
         """
         :return: deep-copy of the LiqExpr
         """
-        return LiqExpr(self.value, self.left, self.right)
+        left_copy = self.left.copy_liquidity() if self.left else None
+        right_copy = self.right.copy_liquidity() if self.right else None
+        return LiqExpr(self.value, left_copy, right_copy)
     # endregion magic methods, deepcopy
