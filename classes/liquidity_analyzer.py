@@ -270,7 +270,7 @@ class LiquidityAnalyzer:
     # region costly algorithm
     def costly_algorithm_k_separate(self):
         for k in self.global_assets:
-            z : set[str] = set()
+            z : set[tuple[str,str]] = set(tuple())
             is_missing_state_found = True
             while is_missing_state_found:
                 is_missing_state_found = False
@@ -279,18 +279,18 @@ class LiquidityAnalyzer:
                         abs_computation_env = abs_computation.get_env()
                         if (abs_computation_env['end'][k] != LiqExpr(LiqConst.EMPTY) and
                             abs_computation_env['start'][k] != abs_computation_env['end'][k] and
-                            abs_computation.get_last_state() not in z
+                            (abs_computation.get_last_state(),k) not in z
                         ):
                             is_missing_state_found = True
                             is_missing_state_added = False
                             for abs_computation_p in self.Tqk[abs_computation.get_last_state()]:
                                 abs_computation_p_env = abs_computation_p.get_env()
                                 if abs_computation_p_env['end'][k] == LiqExpr(LiqConst.EMPTY):
-                                    z.add(abs_computation.get_last_state())
+                                    z.add((abs_computation.get_last_state(),k))
                                     is_missing_state_added = True
                                     break
                             if not is_missing_state_added:
-                                print(f"\tCOSTLY K-SEPARATE - not liquid in:\n\t\tstate: {state}\n\t\tasset: {k}:\n\t\tcomp: {abs_computation}")
+                                print(f"\tCOSTLY K-SEPARATE - not liquid in:\n\t\tstate: {state}\n\t\tasset: {k}\n\t\tcomp: {abs_computation}")
                                 return False
         return True
 
