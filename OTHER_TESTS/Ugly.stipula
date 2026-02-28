@@ -1,3 +1,7 @@
+/*
+Liquid
+*/
+
 stipula Ugly {
     assets w1, w2
     fields x
@@ -14,6 +18,4 @@ stipula Ugly {
         w1 -o Sam
         w2 -o w1
     } => @Q1
-
-    @Q1 Sam: end()[] {} => @Q2
 }

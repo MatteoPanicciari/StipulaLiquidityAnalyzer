@@ -1,3 +1,8 @@
+/*
+Non Liquid
+hA-separate liquid, hB-separate liquid
+*/
+
 stipula Ping_Pong {
   assets hA,hM
   fields x
