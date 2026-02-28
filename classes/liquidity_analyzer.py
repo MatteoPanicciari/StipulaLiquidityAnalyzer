@@ -24,7 +24,7 @@ class LiquidityAnalyzer:
         self.has_guards: bool = False
 
     # region compute results
-    def compute_results_verbose(self) -> tuple[bool, bool, bool]:
+    def compute_results_verbose(self) -> tuple[dict, bool, bool, bool]:
         results = self.compute_results()
 
         print(f"\tFunction Liquidity Types:")
@@ -51,22 +51,16 @@ class LiquidityAnalyzer:
             print(f"\t\t\t\t{abs_computation.get_are_all_types_singleton()}")
         return results
 
-    def compute_results(self) -> tuple[bool, bool, bool]:
+    def compute_results(self) -> tuple[dict, bool, bool, bool]:
         self.compute_states()
         # Computes abs_comps before local_liq, so abs_comps are always already available in verbose
         self.compute_abs_computations()
         if not self.compute_function_local_liquidity():
-            return False, self.has_events, self.has_guards
+            return dict(), False, self.has_events, self.has_guards
         self.compute_reachable_states()
         self.compute_tqk()
-        are_all_types_singleton = all(
-            abs_computation.get_are_all_types_singleton()
-            for abs_computation in self.abs_computations
-        )
-        if are_all_types_singleton:
-            return self.costly_algorithm_k_separate(), self.has_events, self.has_guards
-        else:
-            return self.costly_algorithm_complete(), self.has_events, self.has_guards
+        k_separate_results = self.costly_algorithm_k_separate()
+        return k_separate_results, self.costly_algorithm_complete(), self.has_events, self.has_guards
     # endregion compute results
 
     # region getter, setter
@@ -268,34 +262,39 @@ class LiquidityAnalyzer:
     # endregion efficient algorithm (unused)
 
     # region costly algorithm
-    def costly_algorithm_k_separate(self):
+    def costly_algorithm_k_separate(self) -> dict:
+        result = dict()
         for k in self.global_assets:
-            z : set[tuple[str,str]] = set(tuple())
-            is_missing_state_found = True
-            while is_missing_state_found:
-                is_missing_state_found = False
-                for state in self.reachable_states:
-                    for abs_computation in self.Tqk[state]:
-                        abs_computation_env = abs_computation.get_env()
-                        if (abs_computation_env['end'][k] != LiqExpr(LiqConst.EMPTY) and
-                            abs_computation_env['start'][k] != abs_computation_env['end'][k] and
-                            (abs_computation.get_last_state(),k) not in z
-                        ):
-                            is_missing_state_found = True
-                            is_missing_state_added = False
-                            for abs_computation_p in self.Tqk[abs_computation.get_last_state()]:
-                                abs_computation_p_env = abs_computation_p.get_env()
-                                if abs_computation_p_env['end'][k] == LiqExpr(LiqConst.EMPTY):
-                                    z.add((abs_computation.get_last_state(),k))
-                                    is_missing_state_added = True
-                                    break
-                            if not is_missing_state_added:
-                                print(f"\tCOSTLY K-SEPARATE - not liquid in:\n\t\tstate: {state}\n\t\tasset: {k}\n\t\tcomp: {abs_computation}")
-                                return False
+            result[k] = self.costly_algorithm_k_separate_asset(k)
+        return result
+
+    def costly_algorithm_k_separate_asset(self, k: str) -> bool:
+        z : set[tuple[str,str]] = set(tuple())
+        is_missing_state_found = True
+        while is_missing_state_found:
+            is_missing_state_found = False
+            for state in self.reachable_states:
+                for abs_computation in self.Tqk[state]:
+                    abs_computation_env = abs_computation.get_env()
+                    if (abs_computation_env['end'][k] != LiqExpr(LiqConst.EMPTY) and
+                        abs_computation_env['start'][k] != abs_computation_env['end'][k] and
+                        (abs_computation.get_last_state(),k) not in z
+                    ):
+                        is_missing_state_found = True
+                        is_missing_state_added = False
+                        for abs_computation_p in self.Tqk[abs_computation.get_last_state()]:
+                            abs_computation_p_env = abs_computation_p.get_env()
+                            if abs_computation_p_env['end'][k] == LiqExpr(LiqConst.EMPTY):
+                                z.add((abs_computation.get_last_state(),k))
+                                is_missing_state_added = True
+                                break
+                        if not is_missing_state_added:
+                            print(f"\tCOSTLY K-SEPARATE - not {k}-separate liquid in:\n\t\tstate: {state}\n\t\tcomp: {abs_computation}")
+                            return False
         return True
 
 
-    def costly_algorithm_complete(self):
+    def costly_algorithm_complete(self) -> bool:
         z : set[tuple[str,frozenset[str]]] = set()
         for state in self.reachable_states:
             for abs_computation in self.Tqk[state]:
