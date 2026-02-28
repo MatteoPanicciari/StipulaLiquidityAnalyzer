@@ -24,7 +24,7 @@ class LiquidityAnalyzer:
         self.has_guards: bool = False
 
     # region compute results
-    def compute_results_verbose(self) -> tuple[dict, bool, bool, bool]:
+    def compute_results_verbose(self) -> tuple[dict, bool, bool, bool, bool]:
         results = self.compute_results()
 
         print(f"\tFunction Liquidity Types:")
@@ -51,16 +51,20 @@ class LiquidityAnalyzer:
             print(f"\t\t\t\t{abs_computation.get_are_all_types_singleton()}")
         return results
 
-    def compute_results(self) -> tuple[dict, bool, bool, bool]:
+    def compute_results(self) -> tuple[dict, bool, bool, bool, bool]:
         self.compute_states()
         # Computes abs_comps before local_liq, so abs_comps are always already available in verbose
         self.compute_abs_computations()
+        are_all_types_singleton = all(
+            abs_computation.get_are_all_types_singleton()
+            for abs_computation in self.abs_computations
+        )
         if not self.compute_function_local_liquidity():
-            return dict(), False, self.has_events, self.has_guards
+            return dict(), False, self.has_events, self.has_guards, not are_all_types_singleton
         self.compute_reachable_states()
         self.compute_tqk()
         k_separate_results = self.costly_algorithm_k_separate()
-        return k_separate_results, self.costly_algorithm_complete(), self.has_events, self.has_guards
+        return k_separate_results, self.costly_algorithm_complete(), self.has_events, self.has_guards, not are_all_types_singleton
     # endregion compute results
 
     # region getter, setter
