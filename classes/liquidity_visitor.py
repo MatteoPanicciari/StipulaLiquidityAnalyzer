@@ -6,10 +6,10 @@ from classes.data.liquidity_expression import LiqExpr, LiqConst
 from classes.liquidity_analyzer import LiquidityAnalyzer
 
 class LiquidityVisitor(StipulaVisitor):
-    def __init__(self, is_verbose):
+    def __init__(self, function_frequency, is_verbose):
         StipulaVisitor.__init__(self)
         self.is_verbose = is_verbose
-        self.analyzer = LiquidityAnalyzer()
+        self.analyzer = LiquidityAnalyzer(function_frequency)
 
         self.parties : list[str] = list()
 

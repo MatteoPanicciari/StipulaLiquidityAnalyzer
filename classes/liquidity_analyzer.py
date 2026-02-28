@@ -2,11 +2,11 @@ from classes.data.abstract_computation import AbsComputation
 from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 
-# maximum number of times a function can appear in the same abstract computation (k-canonical)
-K: int = 1
-
 class LiquidityAnalyzer:
-    def __init__(self):
+    def __init__(self, function_frequency):
+        # maximum number of times a function can appear in the same abstract computation (k-canonical)
+        self.K = function_frequency
+
         self.Q0 : str = ''  # initial state
         self.global_assets: list[str] = list()
 
@@ -133,7 +133,7 @@ class LiquidityAnalyzer:
                 for function in self.functions:
                     if function.start_state == abs_computation.get_last_state():
                         new_abs_computation = abs_computation.copy_abs_computation()
-                        if abs_computation.count(function) < K:
+                        if abs_computation.count(function) < self.K:
                             new_abs_computation.insert_configuration(function)
                             for event in function.events_list:
                                 new_abs_computation.add_available_event(event)
