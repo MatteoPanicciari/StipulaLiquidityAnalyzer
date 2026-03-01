@@ -1,0 +1,17 @@
+/* @Q2 is unreachable => h cannot be emptied */
+
+stipula Event_False_Positive {
+    assets h
+    fields x
+    agreement (Part) {
+        Part : x
+    } => @Q0
+
+    @Q0 Part : func()[u]{
+        u -o h
+        now + 1D >> @Q1 {} => @Q2
+        now >> @Q2 {
+            h -o Part
+        } => @Q3
+    } => @Q1
+}

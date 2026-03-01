@@ -1,0 +1,21 @@
+/* useless_func is blocked by its guard => h1 cannot be filled */
+
+stipula Guard_False_Negative {
+    assets h1, h2
+    fields x
+    agreement (Part) {
+        Part : x
+    } => @Q0
+
+    @Q0 Part : func()[u]{
+        u -o h2
+    } => @Q1
+
+    @Q1 Part : useless_func()[](2 < 1){
+        h2 -o h1
+    } => @Q1
+
+    @Q1 Part : end()[]{
+        h2 -o Part
+    } => @Q2
+}

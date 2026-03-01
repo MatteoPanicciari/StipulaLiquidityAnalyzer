@@ -1,0 +1,17 @@
+/* useless_func is blocked by its guard => h cannot be emptied */
+
+stipula Guard_False_Positive {
+    assets h
+    fields x
+    agreement (Part) {
+        Part : x
+    } => @Q0
+
+    @Q0 Part : func()[u]{
+        u -o h
+    } => @Q1
+
+    @Q1 Part : useless_func ()[](2 < 1) {
+        h -o Part
+    } => @Q2
+}
