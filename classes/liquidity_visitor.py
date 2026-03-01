@@ -14,36 +14,35 @@ class LiquidityVisitor(StipulaVisitor):
         self.parties : list[str] = list()
 
     def compute_results(self, contract_name: str):
-        print("___________________________________________"
-              "\n|=========================================|"
-              "\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯"
-              f"\n{contract_name}")
-        result_liquidity = self.analyzer.compute_results_verbose() if self.is_verbose else self.analyzer.compute_results()
-        print("\n¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯")
-
+        print(f"================================================================\n{contract_name}")
+        result_liquidity = self.analyzer.compute_results()
         for asset in result_liquidity[0]:
-            if result_liquidity[0][asset]:
-                print(f"\033[32m{contract_name} is {asset}-separate liquid\033[0m")
+            if result_liquidity[0][asset][0]:
+                print(f"\t\033[32m- is {asset}-separate liquid\033[0m")
             else:
-                print(f"\033[31m{contract_name} is NOT {asset}-separate liquid\033[0m")
-        if result_liquidity[1]:
-            print(f"\033[32m{contract_name} is liquid\033[0m")
+                print(f"\t\033[31m- is NOT {asset}-separate liquid\033[0m")
+                if self.is_verbose:
+                    print(result_liquidity[0][asset][1])
+        if result_liquidity[1][0]:
+            print("\t\033[32m- is liquid\033[0m")
         else:
-            print(f"\033[31m{contract_name} is NOT liquid\033[0m")
+            print(f"\t\033[31m- is NOT liquid\033[0m")
+            if self.is_verbose:
+                print(result_liquidity[1][1])
 
-        if result_liquidity[2] or result_liquidity[3] or result_liquidity[4]:
+        if result_liquidity[2] or result_liquidity[3]:
             print("\033[33m\nWARNING:\033[0m")
             if result_liquidity[2]:
                 print(f"\t\033[33m{contract_name} has events\033[0m")
             if result_liquidity[3]:
                 print(f"\t\033[33m{contract_name} has guards\033[0m")
-            if result_liquidity[4]:
-                print(f"\t\033[33mSome assets in {contract_name} share the SAME TYPE\033[0m")
 
             for asset in result_liquidity[0]:
-                print(f"\t\t\033[33m- {asset}-separate Liquidity could be a false {'positive' if result_liquidity[0][asset] else 'negative'}\033[0m")
-            if result_liquidity[2] or result_liquidity[3]:
-                print(f"\t\t\033[33m- Liquidity could be a false {'positive' if result_liquidity[1] else 'negative'}\033[0m")
+                print(f"\t\t\033[33m- {asset}-separate Liquidity could be a false {'positive' if result_liquidity[0][asset][0] else 'negative'}\033[0m")
+            print(f"\t\t\033[33m- Liquidity could be a false {'positive' if result_liquidity[1][0] else 'negative'}\033[0m")
+        print("================================================================")
+        if self.is_verbose:
+            self.analyzer.compute_verbose_results()
 
     def visitStipula(self, ctx: StipulaParser.StipulaContext):
         """
