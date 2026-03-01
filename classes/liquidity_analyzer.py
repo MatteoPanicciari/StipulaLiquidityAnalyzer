@@ -173,8 +173,6 @@ class LiquidityAnalyzer:
             self.Tqk[state] = set()
         for abs_computation in self.abs_computations:
             for configuration in abs_computation:
-                # TODO: errore: se nella computazione c'è due volte la stessa funzione e noi volevamo
-                #  partire dalla seconda, prenderà sempre la prima
                 self.Tqk[configuration.start_state].add(abs_computation.copy_abs_computation(configuration.start_state))
 
     # region efficient algorithm (unused)

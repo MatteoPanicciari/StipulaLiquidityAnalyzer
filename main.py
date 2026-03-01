@@ -23,7 +23,7 @@ def run(file_path: str, function_frequency: int, is_verbose: bool = False):
 @click.command()
 @click.argument("file_path", default="./TESTS")
 @click.argument("function_frequency", default=3)
-@click.option("-v", "--verbose", "is_verbose", type=bool, default=True, show_default=True, is_flag=True, help='Show verbose output.')
+@click.option("-v", "--verbose", "is_verbose", default=True, show_default=True, is_flag=True, help='Show verbose output.')
 def cli_main(file_path, function_frequency, is_verbose):
     path = Path(file_path)
 
@@ -40,12 +40,3 @@ def cli_main(file_path, function_frequency, is_verbose):
 
 if __name__ == "__main__":
     cli_main()
-
-# TODO
-#   togliere(?) i visitExpression dato che non devo assicurarmi dei tipi o degli id
-#   capire se va bene usare il complete algorithm se anche una sola abs_comp in un contratto ha i tipi di asset che non sono singoletti
-#   capire se gli algoritmi di tqk e liquidity sono effettivamente come devono essere per costo computazionale
-#   testare all'infinito
-#   gestire meglio gli errori (es: chiamo il get_field_value con un field inesistente, lo devo gestire io?)
-#   mettere k tra l'input?
-#   fare i pytest
