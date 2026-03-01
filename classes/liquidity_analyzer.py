@@ -306,10 +306,9 @@ class LiquidityAnalyzer:
                 kbar = set()
                 for k in self.global_assets:
                     if (abs_computation_env['end'][k] != LiqExpr(LiqConst.EMPTY)
-                        and abs_computation_env['start'][k] != abs_computation_env['end'][k]
-                        and (abs_computation.get_last_state(), frozenset({k})) not in z):
+                        and abs_computation_env['start'][k] != abs_computation_env['end'][k]):
                         kbar.add(k)
-                if kbar:
+                if kbar and (abs_computation.get_last_state(), frozenset(kbar)) not in z:
                     is_found = False
                     for abs_computation_p in self.Tqk[abs_computation.get_last_state()]:
                         is_abs_comp_valid = True
@@ -324,13 +323,11 @@ class LiquidityAnalyzer:
                                     is_abs_comp_valid = False
                                     break
                         if is_abs_comp_valid:
-                            z.add((abs_computation_p.get_last_state(), frozenset(kbar)))
+                            z.add((abs_computation.get_last_state(), frozenset(kbar)))
                             is_found = True
                             break
                     if not is_found:
-                        print(f"\tCOSTLY COMPLETE - not liquid in:\n\t\tstate: {state}\n\t\tcomp: {abs_computation}\n\t\tkbar: {kbar}")
+                        print(f"\tCOSTLY COMPLETE - not liquid in:\n\t\tcomp: {abs_computation}\n\t\tkbar: {kbar}")
                         return False
-                else:
-                    return True
         return True
     # endregion costly algorithm
