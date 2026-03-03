@@ -47,7 +47,8 @@ class LiquidityAnalyzer:
 
         function_local_liquidity = self.compute_function_local_liquidity()
         if not function_local_liquidity[0]:
-            return (dict(), function_local_liquidity,
+            k_separate_result = {k: function_local_liquidity for k in self.global_assets}
+            return (k_separate_result, function_local_liquidity,
                     self.has_events, self.has_guards)
         self.compute_reachable_states()
         self.compute_tqk()
