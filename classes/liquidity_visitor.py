@@ -176,6 +176,7 @@ class LiquidityVisitor(StipulaVisitor):
                         destination_value = visitor_entry.get_current_field_value(destination_id)
                         left_value = visitor_entry.get_current_field_value(left_id)
                         destination_value.add_operation(LiqConst.UPPER, left_value)
+                        visitor_entry.merge_function_asset_types(left_id, right_id)
             else:
                 # left -o destination
                 destination_id = ctx.ID(0).getText()
@@ -190,6 +191,8 @@ class LiquidityVisitor(StipulaVisitor):
                         destination_value.add_operation(LiqConst.UPPER, left_value)
                     # [L-AUPDATE] [L-ASEND]
                     visitor_entry.set_field_value(left_id, LiqExpr(LiqConst.EMPTY))
+                    if destination_id not in self.parties:
+                        visitor_entry.merge_function_asset_types(left_id, destination_id)
                 else:
                     # left is a value
                     pass

@@ -1,3 +1,4 @@
+from classes.data.asset_types import AssetTypes
 from classes.data.liquidity_expression import LiqExpr, LiqConst
 
 class VisitorEntry:
@@ -16,11 +17,14 @@ class VisitorEntry:
 
         self.global_assets: list[str] = global_assets
 
+        self.asset_types: AssetTypes = AssetTypes()
+
         for h in global_assets:
             # initialize global assets value to XI
             self.input_env[h] = LiqExpr(f'{LiqConst.XI}{self.xi_count}')
             self.output_env[h] = [LiqExpr(f'{LiqConst.XI}{self.xi_count}')]
             self.xi_count += 1
+            self.asset_types.add_singleton(h)
 
     # region environment levels
     def add_env_level(self) -> None:
@@ -45,6 +49,12 @@ class VisitorEntry:
 
     def get_output_type(self) -> dict[str, list[LiqExpr | None]]:
         return self.output_env
+
+    def get_asset_types(self) -> AssetTypes:
+        return self.asset_types
+
+    def merge_function_asset_types(self, first: str, second: str) -> None:
+        self.asset_types.merge_types(first, second)
 
     def get_global_assets(self) -> list[str]:
         return self.global_assets
@@ -103,6 +113,7 @@ class FunctionVisitorEntry(VisitorEntry):
             # initialize local assets value to FULL
             self.input_env[p] = LiqExpr(LiqConst.FULL)
             self.output_env[p] = [LiqExpr(LiqConst.FULL)]
+            self.asset_types.add_singleton(p)
 
     def compute_local_liquidity(self) -> list[str]:
         """
