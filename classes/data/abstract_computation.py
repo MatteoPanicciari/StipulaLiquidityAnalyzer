@@ -1,10 +1,8 @@
 from __future__ import annotations
-import itertools
 from collections import Counter
 
-from classes.data.asset_types import AssetTypes
 from classes.data.visitor_entry import FunctionVisitorEntry, EventVisitorEntry
-from classes.data.liquidity_expression import LiqExpr, LiqConst
+from classes.data.liquidity_expression import LiqExpr
 
 class AbsComputation:
     def __init__(self):
@@ -16,11 +14,6 @@ class AbsComputation:
         # liquidity type of the abstract computation
         self.liq_type_begin : list[dict[str, LiqExpr]] = list()
         self.liq_type_end : list[dict[str, LiqExpr]] = list()
-
-        self.asset_types : AssetTypes = AssetTypes()
-
-        # True if asset_types is composed only by singletons
-        self.are_all_types_singleton = True
 
         # events table - list of callable events for this abs_comp
         self.available_events : list[EventVisitorEntry] = list()
@@ -50,22 +43,12 @@ class AbsComputation:
             self.is_first_function_missing = False
             for h in entry.global_assets:
                 self.liq_type_begin[-1][h] = entry.get_env()['start'][h].copy_liquidity()
-                self.asset_types.add_singleton(h)
         else:
             self.compute_liquidity_type(self.liq_type_begin[-1], self.liq_type_end[-1], 'start')
 
         # Def 3 - end
         self.liq_type_end.append(dict())
         self.compute_liquidity_type(self.liq_type_end[-1], self.liq_type_begin[-1], 'end')
-
-        # Merges the abs_computation asset_types according to the asset_types sets contained in the entry.
-        # If the asset types A and B are merged in the entry, the groups already formed in abs_computation
-        # that contain A and B will also be merged.
-        for g in entry.get_asset_types():
-            for (a,b) in itertools.combinations(g, 2):
-                if a in entry.get_global_assets() and b in entry.get_global_assets():
-                    self.asset_types.merge_types(a,b)
-                    self.are_all_types_singleton = False
 
 
     def count(self, entry: FunctionVisitorEntry | EventVisitorEntry) -> int:
@@ -81,14 +64,8 @@ class AbsComputation:
             return self.configurations[-1].get_end_state()
         return ''
 
-    def get_asset_types(self) -> AssetTypes:
-        return self.asset_types
-
     def get_available_events(self) -> list[EventVisitorEntry]:
         return self.available_events
-
-    def get_are_all_types_singleton(self) -> bool:
-        return self.are_all_types_singleton
 
     def get_env(self) -> dict[str, dict[str,LiqExpr]]:
         return {'start': self.liq_type_begin[0], 'end': self.liq_type_end[-1]}
