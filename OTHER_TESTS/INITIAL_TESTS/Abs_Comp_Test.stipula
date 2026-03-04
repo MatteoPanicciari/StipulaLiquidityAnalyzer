@@ -15,7 +15,7 @@ expected result:
     Init A:h Cont; Cont A:i Run; Run now+3 Run; Run now+4 End;
 */
 
-stipula Wrong {
+stipula Abs_Comp_Test {
 	fields x
 	agreement(A){
 		A: x

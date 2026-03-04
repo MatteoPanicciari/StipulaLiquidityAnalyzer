@@ -14,33 +14,48 @@ class LiquidityVisitor(StipulaVisitor):
         self.parties : list[str] = list()
 
     def compute_results(self, contract_name: str):
-        print(f"================================================================\n{contract_name}")
+        print(f"================================================================================================\n{contract_name}")
         result_liquidity = self.analyzer.compute_results()
+
+        separate_results = result_liquidity[0]
+        if all(info[0] for info in separate_results.values()):
+            print("\t\033[92m- is Separate Liquid.\033[0m")
+        else:
+            print(f"\t\033[91m- is NOT Separate Liquid.\033[0m")
         for asset in result_liquidity[0]:
             if result_liquidity[0][asset][0]:
-                print(f"\t\033[32m- is {asset}-separate liquid\033[0m")
+                print(f"\t\t\033[92m- is {asset}-Separate Liquid.\033[0m")
             else:
-                print(f"\t\033[31m- is NOT {asset}-separate liquid\033[0m")
+                print(f"\t\t\033[91m- is NOT {asset}-Separate Liquid.\033[0m")
                 if self.is_verbose:
-                    print(result_liquidity[0][asset][1])
+                    print("\t\t\t", result_liquidity[0][asset][1])
         if result_liquidity[1][0]:
-            print("\t\033[32m- is liquid\033[0m")
+            print("\t\033[92m- is Liquid.\033[0m")
         else:
-            print(f"\t\033[31m- is NOT liquid\033[0m")
+            print(f"\t\033[91m- is NOT Liquid.\033[0m")
             if self.is_verbose:
-                print(result_liquidity[1][1])
+                print("\t\t", result_liquidity[1][1])
+
+        print("\033[94m\n\tINFO:\033[0m")
+        if result_liquidity[4]:
+            print(f"\t\t\033[94m{contract_name} contains transfers between distinct assets.\033[0m")
+            print(f"\t\t\t\033[94m- Separate Liquidity does not imply contract liquidity.\033[0m")
+            print(f"\t\t\t\033[94m- Please refer to the Liquidity result.\033[0m")
+        else:
+            print(f"\t\t\033[94m{contract_name} does NOT contain transfers between distinct assets.\033[0m")
+            print(f"\t\t\t\033[94m- Evaluating Separate Liquidity is sufficient.\033[0m")
 
         if result_liquidity[2] or result_liquidity[3]:
-            print("\033[33m\nWARNING:\033[0m")
+            print("\033[93m\n\tWARNING:\033[0m")
             if result_liquidity[2]:
-                print(f"\t\033[33m{contract_name} has events\033[0m")
+                print(f"\t\t\033[93m{contract_name} has events.\033[0m")
             if result_liquidity[3]:
-                print(f"\t\033[33m{contract_name} has guards\033[0m")
-
+                print(f"\t\t\033[93m{contract_name} has guards.\033[0m")
             for asset in result_liquidity[0]:
-                print(f"\t\t\033[33m- {asset}-separate Liquidity could be a false {'positive' if result_liquidity[0][asset][0] else 'negative'}\033[0m")
-            print(f"\t\t\033[33m- Liquidity could be a false {'positive' if result_liquidity[1][0] else 'negative'}\033[0m")
-        print("================================================================")
+                print(f"\t\t\t\033[93m- {asset}-Separate Liquidity result could be a false {'positive' if result_liquidity[0][asset][0] else 'negative'}.\033[0m")
+            print(f"\t\t\t\033[93m- Liquidity result could be a false {'positive' if result_liquidity[1][0] else 'negative'}.\033[0m")
+
+        print("================================================================================================")
         if self.is_verbose:
             self.analyzer.compute_verbose_results()
 

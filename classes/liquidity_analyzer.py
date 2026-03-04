@@ -47,25 +47,33 @@ class LiquidityAnalyzer:
             print(f"\t\t\t\t{abs_computation.get_asset_types()}")
             print(f"\t\t\tARE ALL ASSET TYPES SINGLETON:")
             print(f"\t\t\t\t{abs_computation.get_are_all_types_singleton()}")
-        print("================================================================")
+        print("================================================================================================")
 
     def compute_results(self) -> tuple[dict, tuple[bool, str], bool, bool, bool]:
         self.compute_states()
         # Computes abs_comps before local_liq, so abs_comps are always already available in verbose
         self.compute_abs_computations()
+
         are_all_types_singleton = all(
             abs_computation.get_are_all_types_singleton()
             for abs_computation in self.abs_computations
         )
-
         function_local_liquidity = self.compute_function_local_liquidity()
         if not function_local_liquidity[0]:
             k_separate_result = {k: function_local_liquidity for k in self.global_assets}
             return (k_separate_result, function_local_liquidity,
                     self.has_events, self.has_guards, not are_all_types_singleton)
+
         self.compute_reachable_states()
         self.compute_tqk()
-        return (self.costly_algorithm_k_separate(), self.costly_algorithm_complete(),
+
+        result_liquidity = self.costly_algorithm_complete()
+        if result_liquidity[0]:
+            result_k_separate = {k: (True, "") for k in self.global_assets}
+        else:
+            result_k_separate = self.costly_algorithm_k_separate()
+
+        return (result_k_separate, result_liquidity,
                 self.has_events, self.has_guards, not are_all_types_singleton)
     # endregion compute results
 
@@ -98,7 +106,7 @@ class LiquidityAnalyzer:
         for entry in self.functions:
             par = entry.compute_local_liquidity()
             if par:
-                return False, f"\t\t{entry} is NOT local liquid for {par}"
+                return False, f"{entry} is NOT local liquid for {par}"
         return True, ""
 
     def compute_states(self):
@@ -292,7 +300,7 @@ class LiquidityAnalyzer:
                                 is_missing_state_added = True
                                 break
                         if not is_missing_state_added:
-                            return False, f"\t\tcomp: {abs_computation}"
+                            return False, f"comp: {abs_computation}"
         return True, ""
 
 
@@ -325,6 +333,6 @@ class LiquidityAnalyzer:
                             is_found = True
                             break
                     if not is_found:
-                        return False, f"\t\tcomp: {abs_computation}\n\t\tassets: {kbar}"
+                        return False, f"{kbar} in comp: {abs_computation}"
         return True, ""
     # endregion costly algorithm
