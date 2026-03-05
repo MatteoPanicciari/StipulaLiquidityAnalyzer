@@ -1,0 +1,32 @@
+/*
+No Liquid
+No h1-separate liquid
+h2-separate liquid
+
+But event 'now' is unreachable =>
+    Liquid
+    h1-separate liquid
+    h2-separate liquid
+*/
+
+stipula False_Negative {
+    assets h1, h2
+    fields max
+
+    agreement(Matteo) {
+        Matteo: max
+    } => @Q0
+
+    @Q0 Matteo: init()[u]{
+        u -o h2
+
+        now + 1D >> @Q1 {} => @Q2
+        now >> @Q2 {
+            h2 -o h1
+        } => @Q2
+    } => @Q1
+
+    @Q2 Matteo: end()[]{
+        h2 -o Matteo
+    } => @Q3
+}

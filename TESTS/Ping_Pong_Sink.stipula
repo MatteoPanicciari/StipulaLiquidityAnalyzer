@@ -1,0 +1,25 @@
+/*
+Non Liquid
+hA-separate liquid, hB-separate liquid
+
+blocked funds
+*/
+
+stipula Ping_Pong_Sink {
+    assets hA,hM
+    fields x
+
+    agreement(Amy,Mary){
+        Mary : x
+    } => @Q0
+
+    @Q0 Mary: ping()[u]{
+        hM -o hA
+        u -o hA
+    } => @Q1
+
+    @Q1 Amy: pong()[v]{
+        hA -o hM
+        v -o hM
+    } => @Q0
+}

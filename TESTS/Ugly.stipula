@@ -1,7 +1,13 @@
 /*
-Non Liquid
-Non w1-separate liquid
-Non w2-separate liquid
+k == 1
+    Non Liquid
+    Non w1-separate liquid
+    w2-separate liquid
+
+k > 1
+    Liquid
+    w1-separate liquid
+    w2-separate liquid
 */
 
 stipula Ugly {
@@ -20,6 +26,4 @@ stipula Ugly {
         w1 -o Sam
         w2 -o w1
     } => @Q1
-
-    @Q1 Sam: end()[] {} => @Q2
 }
